@@ -1,5 +1,5 @@
 # CI host setup only. Do not disable AppArmor's global user-namespace restriction.
-# Parent permissions authorize trusted bwrap to assemble its namespaces; the exec
+# Parent permissions authorize trusted bwrap to assemble its namespaces; the
 # stacked exec profile removes capabilities/user namespaces from guest programs.
 abi <abi/4.0>,
 include <tunables/global>
@@ -8,9 +8,8 @@ include <tunables/global>
 # setup domain across exec. Explicit permissions replace implicit allow all.
 # Stacking adds the child restrictions without removing the original domain,
 # preserving no-new-privileges (which correctly rejects replacement transitions).
-# Only the trusted namespace assembler needs disconnected-path lookup while it
-# replaces its mount namespace. Guest code transitions to a separate profile
-# without this flag. File access in this setup domain is already path-wide.
+# The trusted namespace assembler needs disconnected-path lookup while it
+# replaces its mount namespace. File access in this setup domain is path-wide.
 profile safeshell-bwrap /usr/bin/bwrap flags=(attach_disconnected) {
   / r,
   /** mrwkl,
@@ -27,7 +26,12 @@ profile safeshell-bwrap /usr/bin/bwrap flags=(attach_disconnected) {
   /** px -> safeshell-bwrap//&safeshell-child,
 }
 
-profile safeshell-child {
+# Inherited /dev/null and output pipes are disconnected from the guest mount
+# tree. Permit metadata lookup under a distinct synthetic prefix, avoiding
+# aliasing to real guest paths. Sensitive FD exclusion is tested by inode identity.
+# AppArmor file permissions are not the filesystem boundary: explicit bwrap
+# mounts supply that boundary; this profile denies capabilities/user namespaces.
+profile safeshell-child flags=(attach_disconnected, attach_disconnected.path=/safeshell-disconnected) {
   / r,
   /** mrwkl,
   signal,

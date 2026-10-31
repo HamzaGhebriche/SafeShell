@@ -273,13 +273,16 @@ def test_descendants_die_on_normal_exit(tmp_path):
 
 
 def test_timeout_cleanup(tmp_path):
+    # The timeout includes namespace setup. Leave startup headroom on hosted
+    # AppArmor runners, then wait beyond the descendant's entire write delay.
+    # Keep both the ready control and the no-late-write assertion mandatory.
     status, _ = run(
         tmp_path,
-        ["/bin/sh", "-c", "echo ready > ready; (sleep 2; echo escaped > late) & wait"],
-        timeout=1,
+        ["/bin/sh", "-c", "echo ready > ready; (sleep 8; echo escaped > late) & wait"],
+        timeout=5,
     )
     assert status == 124 and (tmp_path / "ready").exists()
-    time.sleep(1.3)
+    time.sleep(8.3)
     assert not (tmp_path / "late").exists()
 
 
