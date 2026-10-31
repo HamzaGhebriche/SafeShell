@@ -17,6 +17,13 @@ Experimental, local and unpublished. Prepared for review on 2026-10-30.
 * Final review: reject non-regular history records, discover the complete test directory,
   verify installed hard denials, and prepare a five-minute walkthrough and tester checklist.
 
-Native Ubuntu CI is unverified. No CPU/memory/process/disk quotas, immutable runtime image,
+Native Ubuntu CI passed 95 tests with zero skips and real installed-wheel workflows;
+the portable Ubuntu/Windows/macOS matrix passed. [Commit/run/evidence](docs/VALIDATION.md).
+CI follow-up pins Ruff, requires the declared setuptools minimum, resolves macOS path aliases,
+and loads a scoped AppArmor setup/stacked-guest policy without disabling NNP or the global
+user-namespace restriction. The timeout cleanup fixture retains readiness/no-write controls
+with startup headroom. No package or release was published.
+
+No CPU/memory/process/disk quotas, immutable runtime image,
 concurrent host-writer protection, cross-platform enforcement, independent audit or production
 readiness is claimed. Workspace data and exposed runtime code remain readable.

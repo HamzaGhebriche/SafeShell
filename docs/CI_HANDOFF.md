@@ -1,57 +1,95 @@
-# Exact remaining native Ubuntu CI action
+# Private repository and native CI handoff
 
-Status: **configuration reviewed; remote execution unverified**. WSL and Debian VM results are
-separate evidence and are not native Ubuntu GitHub CI. No remote run is recorded for this source.
+The user authorized normal commits/pushes on 2026-10-31. GitHub and Git credentials
+independently matched **HamzaGhebriche** (account ID 146950748). The dedicated
+[HamzaGhebriche/SafeShell](https://github.com/HamzaGhebriche/SafeShell) repository
+was created **private** (repository ID 1440555247). Owner, private visibility and
+push permission were verified before pushing; visibility was not changed.
 
-Update 2026-10-31: the user explicitly authorized a normal commit/push and creating a dedicated
-private repository. GitHub account **HamzaGhebriche** and the independently authenticated Git
-credential account match (account ID 146950748). **HamzaGhebriche/SafeShell** was created private;
-its owner, private visibility and push permission were verified. This folder now has its own
-Git root and `origin=https://github.com/HamzaGhebriche/SafeShell.git`; the ancestor repository is
-untouched. Staged review and the first native CI run are pending; no CI success is claimed yet.
+This checkout has its own Git root, origin
+`https://github.com/HamzaGhebriche/SafeShell.git`, and branch
+`codex/safeshell-alpha-review`. The unrelated ancestor repository was untouched.
+Ordinary commits/fast-forward pushes preserve history. No force push, tag, hosted
+release or package publication occurred. Tracked/staged text was reviewed for
+credentials, history, temporary files and build artifacts. Distributions, raw
+validation directories, local history and authentication helpers were excluded.
 
-At the earlier review, the visible Git root was `C:/Users/kali`, with an unrelated remote. Do not push this parent repository or rerun
-unrelated checks and describe them as SafeShell validation.
+See [actual validation results](VALIDATION.md) for commit/run links and outcomes.
+Earlier local WSL/Debian/Windows receipts are separate from remote GitHub CI.
 
-## Action needed after explicit authorization
+## Required native job and portable matrix
 
-1. Select/create an approved dedicated SafeShell repository and a clean checkout with these
-   candidate files **at the repository root**. Do not nest `.github/workflows` under SafeShell/.
-2. Commit the exact reviewed candidate on `codex/safeshell-alpha-review` and authorize pushing
-   that branch. These local preparation instructions do not authorize or perform that push.
-3. Push the branch. The existing `push` trigger starts the `checks` workflow; opening a PR also
-   triggers it. No package/release publishing step exists in this workflow.
-4. Require **linux-boundary** and the **portable matrix** to finish successfully. Record the
-   candidate commit SHA, workflow run URL, job results and evidence artifact before sign-off.
+`.github/workflows/ci.yml` selects `ubuntu-24.04`, read-only contents permission,
+a 15-minute timeout and `SAFESHELL_REQUIRE_BACKEND=1`. It installs distro backend,
+compiler, venv and AppArmor prerequisites, loads the scoped policy below, runs
+`tools/validate_linux.py`, builds wheel/sdist and runs fresh-venv installed
+workflows with `--require-backend`. It uploads `linux-enforcement-evidence` even
+after failure. There is no continue-on-error, mocked backend, host fallback or
+skip acceptance in this job.
 
-Suggested future commands, only in that approved dedicated checkout:
+The validator discovers **all of `tests/`**. Required-mode pytest fails on any skip
+or no passing boundary cases; subprocess regressions test that gate with/without
+terminal output. Inventory capture requires exact planned/observed file equality.
+The installed-wheel verifier checks metadata/source-import exclusion, explain,
+script, policy init/validate, hard denial, doctor, real execution, history and
+timeout/output-limit exit codes. The portable Ubuntu/Windows/macOS matrix runs
+lint, formatting, tests, builds and clean-wheel workflows. Matrix fail-fast is
+disabled. Linux portable tests omit the boundary file because the mandatory native
+job covers the complete directory. Unsupported-platform skips remain explicit.
+
+## Ubuntu AppArmor prerequisite
+
+Stock Ubuntu's generic unprivileged-user-namespace profile denied the capability
+Bubblewrap needs to initialize loopback. The first real run failed closed. The
+job does **not** disable AppArmor, change a global sysctl, remove namespaces or
+seccomp, run tests as root, or substitute a container/WSL backend.
+
+On the disposable runner it loads
+[safeshell-bwrap](../.github/apparmor/safeshell-bwrap). The trusted `/usr/bin/bwrap`
+setup domain permits namespace/mount assembly, capabilities and loopback lookup.
+Exec **stacks** an enforced `safeshell-child` domain denying capabilities/user
+namespaces. Both profiles must allow an operation; guest execs retain the
+intersection. Stacking preserves no-new-privileges. The validator requires the
+exact label `safeshell-bwrap//&safeshell-child (enforce)`; the setup label alone is
+rejected. The workflow asserts `kernel.apparmor_restrict_unprivileged_userns=1`.
+
+AppArmor file rules permit reachable files; they are **not** the filesystem
+boundary. Explicit Bubblewrap mounts supply that boundary. Disconnected null
+stdin/output pipes require metadata lookup. The child uses a distinct synthetic
+disconnected-path prefix; tests still require inherited dummy secret-file/socket
+identities to be absent. Seccomp, namespaces, capability dropping,
+no-new-privileges and minimal mounts remain mandatory independently of this
+policy. This is ephemeral test-host configuration, not an independently audited
+production deployment policy. See [the kernel's no-new-privileges contract](https://docs.kernel.org/userspace-api/no_new_privs.html).
+
+## Exact reproduction
+
+As a nonroot sudo user on a **disposable Ubuntu 24.04 runner**:
 
 ```sh
-test "$(git rev-parse --show-toplevel)" = "$PWD" || exit 1
-git switch -c codex/safeshell-alpha-review
-git add -- .github .gitignore pyproject.toml MANIFEST.in LICENSE README.md CHANGELOG.md RELEASE_NOTES.md SECURITY.md CONTRIBUTING.md Vagrantfile safeshell tests tools docs examples
-git commit -m 'Prepare SafeShell v0.1.0-alpha review candidate'
-# Only after the separate push authorization and remote check:
-git remote -v
-git push -u origin codex/safeshell-alpha-review
+sudo apt-get update
+sudo apt-get install -y bubblewrap libseccomp2 build-essential python3-venv apparmor
+sudo apparmor_parser --replace .github/apparmor/safeshell-bwrap
+test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = 1
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install pytest ruff==0.17.3 build 'setuptools>=77'
+python -m ruff check .
+python -m ruff format --check .
+SAFESHELL_REQUIRE_BACKEND=1 \
+SAFESHELL_EXPECT_APPARMOR_PROFILE='safeshell-bwrap//&safeshell-child' \
+python tools/validate_linux.py
+python -m build --no-isolation
+python tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl --require-backend
 ```
 
-## What the reviewed Ubuntu job actually requests
+Actual tests/probes are unprivileged; only dependencies/policy and temporary
+setuid/outside-dummy fixture provisioning use sudo. The validator removes its
+fixtures. Destroy the disposable runner afterward; do not blindly install this
+CI policy on a production host. An unconfigured host can legitimately refuse
+setup in `doctor`; execution must then remain unavailable.
 
-`.github/workflows/ci.yml` selects `ubuntu-24.04`, read-only contents permission, a 15-minute
-job timeout and `SAFESHELL_REQUIRE_BACKEND=1`. It installs distro backend/compiler/venv prerequisites,
-runs `tools/validate_linux.py`, builds the distribution, and runs the wheel's fresh-venv smoke
-workflow with `--require-backend`. It uploads `linux-enforcement-evidence` even after failure.
-There is no `continue-on-error`, host fallback, backend mocking or skip acceptance in this job.
-
-The validator discovers **all of `tests/`**, including the entire boundary file. Its pytest
-session gate fails on any skipped test or no passing boundary cases. Gate subprocess regressions
-cover skipped/no-boundary runs. The installed-wheel verifier requires a real available backend,
-checks version metadata and source-import exclusion, and exercises inspection/script, strict
-policy denial, protected run, history, timeout and output-limit results.
-
-Accept only actual artifacts with zero JUnit failures/errors/skips, all collected tests present,
-backend available, planned/observed runtime inventories equal, and installed smoke version
-0.1.0a1 plus expected denial/limit exit codes. A fixture/setup failure is a failed run, never a
-substitute for skipped security tests. Keep environment versions and artifact hashes tied to
-that commit. Do not label native Ubuntu CI passed from configuration inspection alone.
+Subsequent authorized fixes use ordinary `git commit` then
+`git push origin codex/safeshell-alpha-review`; the push trigger starts `checks`.
+Require the native and all three portable jobs on the intended SHA. Inspect JUnit
+failures/errors/skips and the installed-wheel receipt, not only a green badge.

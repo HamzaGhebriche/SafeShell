@@ -55,11 +55,12 @@
     "tools/smoke_installed.py": "3c0e6ae3db1208d5a0617d171efe0bdfd444018c349b14e46c983ddb18075c74",
     "tools/validate_linux.py": "18e83ee3a6f3e936e307bf8dcd5984c937ef2a925011e2bb1dbdbda96b914dde"
   },
-  "native_ubuntu_ci": "unverified; no candidate commit/CI target and no push authorized",
   "vm": {
     "url": "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2",
     "sha512": "0464b5d4ae3aa4f658468d88da83af7857b71548b30d46dcb6282770955a747fb95a983476db90d25afd0653af607224c7ebd05122ab71faa106fd712aaad652",
     "source_sha256": "678f3df803801f0a217136d8c6e5e91a552a4a2f0c80f6ad85b291a62db5237d",
     "hypervisor": "QEMU KVM, no host folder mounts"
-  }
+  },
+  "native_ubuntu_ci_at_local_capture": "unverified; no candidate commit/CI target and no push authorized",
+  "scope_note": "Historical local checkpoint; source hashes preserved. Subsequent remote results: validation-remote-ci.json; not a final-commit local rerun."
 }

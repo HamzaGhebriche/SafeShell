@@ -1,18 +1,78 @@
 # Alpha candidate validation — final review 2026-10-31
 
-**Reviewable, not ready for publication:** native Ubuntu CI remains unverified. The user has
-now authorized a normal private-repository commit/push. The dedicated private target is
-https://github.com/HamzaGhebriche/SafeShell; its owner and privacy were verified. Initial remote
-CI is pending. Packages and releases remain unpublished. Earlier results below are local
-WSL/Debian/Windows validation, not remote CI.
+**GO for controlled private experimental-alpha testing; no publication authorized.**
+The dedicated repository is [HamzaGhebriche/SafeShell](https://github.com/HamzaGhebriche/SafeShell),
+verified private with the expected owner. Ordinary commits/pushes were authorized and performed;
+the unrelated ancestor repository was untouched. No tag, release or package was published.
+
+## Actual remote GitHub CI — 2026-10-31
+
+Candidate commit: **`eb621ed941f36e8d869897e2ca41d20121151776`**, branch
+`codex/safeshell-alpha-review`.
+[Workflow 41176530291: SUCCESS](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291).
+These are actual remote results, distinct from the earlier local checkpoints below.
+The subsequent documentation-only commit records this successful code/test/workflow checkpoint;
+its own push must also pass CI before handoff.
+
+| Remote job | Actual result |
+| --- | --- |
+| [linux-boundary / Ubuntu 24.04 x86_64](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291/job/124465126257) | **95 passed, zero failures/errors/skips**, including all 23 boundary cases; sdist/wheel build and required-backend fresh-wheel workflows passed |
+| [portable Ubuntu](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291/job/124465126562) | **72 passed, zero skips**; boundary file intentionally covered by complete native job; lint/format/build/clean wheel passed |
+| [portable Windows](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291/job/124465126346) | **71 passed, 24 explicit skips**: 23 Linux boundary cases + POSIX FIFO; lint/format/build/clean wheel and execution refusal passed |
+| [portable macOS arm64](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291/job/124465126500) | **72 passed, 23 explicit Linux boundary skips**; lint/format/build/clean wheel and execution refusal passed; no Linux arm64 enforcement claim |
+
+The native host reported kernel `7.0.0-1017-azure`, glibc 2.39, Python 3.11.17,
+Bubblewrap 0.9.0, test UID 1001. Uploaded JUnit was independently inspected: all
+95 cases present, including 23 boundary cases, with zero failures/errors/skips.
+Doctor reported available; observed/planned runtime file sets matched exactly (683).
+The observed AppArmor label was `safeshell-bwrap//&safeshell-child (enforce)` and
+the workflow asserted the global user-namespace restriction remained 1. This is
+**Ubuntu with the documented scoped CI profile**, not stock-Ubuntu out-of-box verification.
+
+The installed wheel reported 0.1.0a1, backend available, policy denial 3, protected
+execution 0, output limit 125, timeout 124, and all history/explain/policy workflows
+passed. Fresh venv, no system packages, offline install and unrelated cwd were required.
+Wheel SHA256: `f3bfc0bd5830bb71bf59de8a1876e44b1e7a9515151ab3bdf2c791f1da45f484`.
+
+[Evidence artifact 13032768164](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291/artifacts/13032768164):
+`linux-enforcement-evidence`, archive SHA256
+`82dc00e9c2fb15432c2dfb48431344a88654bc929825803f3654a71c27fc5c69`.
+Artifact retention expires 2027-01-29; compact results, source hashes and per-file
+evidence hashes are committed in [validation-remote-ci.json](validation-remote-ci.json).
+Raw logs/artifacts remain ignored, separate from application command history.
+
+### Earlier remote failures — preserved, not counted as passes
+
+All attempts used normal commits and retained strict checks. Full SHAs/links are
+in the remote JSON receipt. The initial matrix cancelled Windows/macOS on failure;
+matrix fail-fast was then disabled so each platform could finish independently.
+
+| Run | Actual failure and resolution |
+| --- | --- |
+| [41174695711](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41174695711) | Generic Ubuntu AppArmor denied loopback setup (72 passed/23 setup errors); new Ruff defaults found 33 lint issues. Fixed lint findings/pinned version; added scoped CI profile. |
+| [41175543723](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41175543723) | Exact guest-label gate rejected retained setup domain before pytest. Windows/macOS had old setuptools incompatible with license metadata; required >=77. |
+| [41175911202](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41175911202) | Enforced setup profile lacked lookup permissions; macOS source check compared lexical temp-path aliases; resolved paths while retaining containment assertion. |
+| [41176023810](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176023810) | Audit identified Unix datagram socket needed for trusted loopback interface lookup. All portable jobs passed. |
+| [41176085007](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176085007) | Root-directory lookup needed an explicit AppArmor rule. All portable jobs passed. |
+| [41176180094](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176180094) | NNP rejected replacement profile transition; changed to intersecting stack, retaining NNP. All portable jobs passed. |
+| [41176290527](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176290527) | **93 passed, 2 failed, no skips**: null-descriptor metadata denied and one-second fixture expired during setup. Scoped disconnected-path lookup; timeout cleanup now 5s with 8s delayed write and 8.3s post-exit observation, retaining both assertions. All portable jobs passed. |
+
+No security test became skip/xfail. Backend mounts, seccomp, NNP, network separation
+and fail-closed behavior were retained. See [CI_HANDOFF.md](CI_HANDOFF.md) for exact
+Ubuntu setup/reproduction and [FINAL_REVIEW.md](FINAL_REVIEW.md) for findings.
+
+## Earlier local validation — separate source checkpoints
+
+The summaries below retain the original source/test/wheel hashes. They predate
+remote CI fixes; they are not claimed as final-commit Debian/WSL reruns.
 
 | Environment | Actual result | Scope |
 | --- | --- | --- |
 | Ubuntu 24.04.1 / WSL2 x86_64 | **95 passed, zero skips** | Kernel 6.18.54.1-microsoft-standard-WSL2, glibc 2.39, Python 3.12.3, bubblewrap 0.9.0; tests as UID 65534 |
 | Debian 12 native-kernel KVM guest | **95 passed, zero skips** | Kernel 6.1.0-54-cloud-amd64, glibc 2.36, Python 3.11.2, bubblewrap 0.8.0; tests as UID 1000 |
-| Native Ubuntu GitHub CI | **Unverified** | No suitable published repository/commit for this standalone folder; detected Git remote belongs to unrelated parent repository; pushes prohibited |
+| Native Ubuntu GitHub CI | See actual remote results above | Separate remote evidence; not part of these historical local receipts |
 | Windows | **70 passed, 25 explicit skips** | 23 Linux-only boundary cases, 1 denied hardlink fixture and 1 POSIX FIFO fixture; clean installed wheel refusal/history passed |
-| macOS / aarch64 / other filesystems | **Unverified** | No broader enforcement claim |
+| Linux aarch64 / other filesystems | **Unverified** | No broader enforcement claim; macOS portable results are above |
 
 Ruff formatting/lint and alpha wheel/source builds passed. A wheel installed offline into a
 fresh WSL venv passed explain/script, policy init/validate, doctor, protected run, history
@@ -37,7 +97,7 @@ These are explicit validation artifacts with dummy data, not application command
 
 Final review fixed non-regular history record handling, switched CI validation to full test
 directory discovery, and verified hard policy denial on the installed wheel. The updated Linux
-suites pass 95/0; native Ubuntu CI is still configuration-only review, not an actual run.
+suites passed 95/0 at their recorded checkpoints; actual native Ubuntu CI is recorded above.
 See [final findings](FINAL_REVIEW.md), [the exact CI handoff](CI_HANDOFF.md),
 [five-minute walkthrough](DEMO.md) and [tester checklist](TESTER_CHECKLIST.md).
 
@@ -59,7 +119,7 @@ are checked separately against the validated source/test hashes; no bit-for-bit 
 | Cleanup/limits | Normal exit, timeout, raw output cap, slow consumer, SIGINT/SIGTERM and supervisor SIGKILL; delayed descendant writes absent |
 | No fallback | Invalid real bwrap setup option, exact Popen spy and absolute host marker; unavailable/exception unit paths |
 | Policy/privacy/JSON | Strict values, permission review, noninteractive decisions, redaction, escaping, exit statuses; NTFS ACLs not verified |
-| Required gate | Skip rejection with/without terminal plugin and failure for missing passing boundary tests; native Ubuntu CI still needs a run |
+| Required gate | Skip rejection with/without terminal plugin and failure for missing passing boundary tests; actual native Ubuntu run passed this gate |
 
 All nine original skips received real Linux coverage: workspace/child, outside/symlink, host
 write, sockets, environment/privilege, normal/timeout cleanup, argv layout and real hardlink
@@ -115,7 +175,9 @@ python -m build --no-isolation
 python tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl
 ```
 
-Native Ubuntu CI is the remaining release gate. Other architectures, concurrent host writers,
+The native Ubuntu CI gate passed on the recorded commit with the scoped test-host profile.
+Use CI_HANDOFF.md for that exact reproduction; the generic Linux commands above do not load
+AppArmor policy. Other architectures, concurrent host writers,
 FUSE/network/DrvFS workspaces, alternate ABIs, CPU/memory/process/disk containment and independent
 security review have no verification claim. See [workspace races](WORKSPACES.md),
 [the mount inventory](SANDBOX.md) and [release notes](../RELEASE_NOTES.md).

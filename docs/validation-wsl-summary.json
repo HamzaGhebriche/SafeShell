@@ -55,5 +55,6 @@
     "tools/smoke_installed.py": "3c0e6ae3db1208d5a0617d171efe0bdfd444018c349b14e46c983ddb18075c74",
     "tools/validate_linux.py": "18e83ee3a6f3e936e307bf8dcd5984c937ef2a925011e2bb1dbdbda96b914dde"
   },
-  "native_ubuntu_ci": "unverified; no candidate commit/CI target and no push authorized"
+  "native_ubuntu_ci_at_local_capture": "unverified; no candidate commit/CI target and no push authorized",
+  "scope_note": "Historical local checkpoint; source hashes preserved. Subsequent remote results: validation-remote-ci.json; not a final-commit local rerun."
 }

@@ -10,6 +10,9 @@ by the inspected command. This is not a production-readiness or complete-isolati
 On supported Debian/Ubuntu Linux, as a nonroot user, install current bubblewrap, libseccomp2
 and python3-venv. From the candidate folder:
 
+Ubuntu AppArmor may require reviewed host configuration; see [CI_HANDOFF.md](CI_HANDOFF.md).
+Complete that prerequisite before the timer. Setup refusal is an explicit result.
+
 ```sh
 wheel=$(realpath dist/safeshell_cli-0.1.0a1-py3-none-any.whl)
 demo=$(mktemp -d)
@@ -98,7 +101,9 @@ In the prepared native Windows PowerShell terminal:
 Expected: both exit **4**, backend unavailable, no child `SHOULD_NOT_RUN` output. `--yes` cannot
 create missing enforcement. On another supported Linux machine, do not simulate this by
 changing platform detection. End with the recommendation: controlled experimental testing
-only; publication waits for an actual successful native Ubuntu CI run.
+only. Native CI is now recorded in VALIDATION.md; publication remains unauthorized and
+requires a separate release decision. On Ubuntu, see CI_HANDOFF.md for the scoped test-host
+AppArmor prerequisite; an unconfigured host can correctly refuse setup.
 
 ### Native Windows setup before the timer
 

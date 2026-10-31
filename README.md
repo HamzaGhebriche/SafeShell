@@ -26,6 +26,13 @@ Python 3.11+, bubblewrap 0.8+ and libseccomp2 on Debian/Ubuntu Linux. Use curren
 updates, an unprivileged account, and working user namespaces. Python was selected for this
 initial implementation; the kernel, bubblewrap and libseccomp provide the enforcement.
 
+Ubuntu 24.04's AppArmor user-namespace policy can refuse Bubblewrap setup even when
+these packages are installed. `doctor` must succeed before execution is available.
+The native CI runner loads an application-scoped setup/guest policy; see
+[the exact CI configuration](docs/CI_HANDOFF.md). That disposable-runner setup is
+not automatic production-host configuration. SafeShell never disables AppArmor or
+falls back to host execution when setup fails.
+
 From this checkout:
 
 ```sh
@@ -58,10 +65,13 @@ directory in a fresh venv so source imports cannot hide packaging errors.
 | --- | --- | --- |
 | Ubuntu 24.04.1 / WSL2 x86_64 | 95 tests passed, zero skips | Reduced runtime; Linux /tmp workspaces tested |
 | Debian 12 native-kernel KVM guest | 95 tests passed, zero skips | Reduced runtime; no host folder/SSH agent shared |
-| Native Ubuntu GitHub CI | Configured but unavailable for this unpublished checkout | **Unverified release gate** |
-| Windows | Portable tests run; execution refusal tested | Inspection/policy/history only; no NTFS ACL verification |
-| macOS | CI configured, not run here | Inspection/policy/history only; execution refused |
-| aarch64 / other filesystems | Not tested | No enforcement validation claim |
+| Native Ubuntu 24.04 GitHub CI, x86_64 | **95 passed, zero skips**; clean wheel passed | Scoped AppArmor CI policy required; [actual run](docs/VALIDATION.md) |
+| Windows GitHub CI | 71 passed, 24 explicit skips; clean wheel passed | Inspection/policy/history; execution refused; no NTFS ACL verification |
+| macOS GitHub CI (arm64) | 72 passed, 23 Linux-only skips; clean wheel passed | Inspection/policy/history only; execution refused |
+| Linux aarch64 / other filesystems | Not tested | No enforcement validation claim |
+
+WSL/Debian rows are earlier local source checkpoints; the final code/test/workflow
+checkpoint is the linked native CI run. Source hashes distinguish these results.
 
 The alpha has one fixed, deliberately small Debian/Ubuntu runtime. It mounts individual selected
 executables, their ELF shared-library dependencies, and packaged Python stdlib code. It does
@@ -157,6 +167,7 @@ python3 tools/validate_linux.py
 ```
 
 Required Linux runs fail on any skip or missing passing boundary tests. Unsupported platforms
-explicitly skip boundary cases in a full pytest run. Native Ubuntu CI still needs to run before
-release. Future work includes independent review, race-resistant workspace attachment, resource
+explicitly skip boundary cases in a full pytest run. Actual native Ubuntu CI results and the
+scoped AppArmor prerequisite are recorded in [VALIDATION.md](docs/VALIDATION.md).
+Future work includes independent review, race-resistant workspace attachment, resource
 quotas and broader runtime support; no additional backend or UI is included in this alpha.

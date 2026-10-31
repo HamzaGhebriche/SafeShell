@@ -34,4 +34,7 @@ Sanitized output or minimal session metadata:
 Do not attach environment dumps, real credentials, raw private commands or whole projects.
 Use [SECURITY.md](../SECURITY.md) for suspected boundary bypasses; use a normal bug report for
 usability/packaging issues. An unavailable backend or unsupported runtime is not evidence of a
-sandbox bypass. Native Ubuntu CI remains unverified until a real run and artifacts are recorded.
+sandbox bypass. Actual native Ubuntu CI and portable results, commit/run links and evidence are recorded in
+[VALIDATION.md](VALIDATION.md). Include the tested commit SHA as well as version in bug reports;
+all candidates still use 0.1.0a1. Ubuntu hosts may need reviewed AppArmor configuration;
+see [CI_HANDOFF.md](CI_HANDOFF.md).

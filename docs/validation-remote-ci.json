@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-31",
+  "scope": "Remote GitHub Actions; earlier local receipts remain separate",
+  "repository": "https://github.com/HamzaGhebriche/SafeShell",
+  "private": true,
+  "branch": "codex/safeshell-alpha-review",
+  "commit": "eb621ed941f36e8d869897e2ca41d20121151776",
+  "run_id": 41176530291,
+  "workflow_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291",
+  "conclusion": "success",
+  "host": {
+    "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "python": "3.11.17 (main, Oct  1 2026, 14:32:31) [GCC 13.3.0]",
+    "bubblewrap": "bubblewrap 0.9.0",
+    "test_uid": 1001
+  },
+  "jobs": [
+    {
+      "id": 124465126257,
+      "name": "linux-boundary",
+      "conclusion": "success",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291/job/124465126257",
+      "tests": {
+        "tests": 95,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "boundary_cases": 23,
+      "clean_wheel": {
+        "wheel": "safeshell_cli-0.1.0a1-py3-none-any.whl",
+        "sha256": "f3bfc0bd5830bb71bf59de8a1876e44b1e7a9515151ab3bdf2c791f1da45f484",
+        "workflows": {
+          "version": 0,
+          "explain": 0,
+          "explain-script": 0,
+          "policy-init": 0,
+          "policy-validate": 0,
+          "doctor": 0,
+          "policy-denial": 3,
+          "run": 0,
+          "output-limit": 125,
+          "timeout": 124,
+          "history": 0,
+          "history-show": 0,
+          "history-delete": 0,
+          "history-after-delete": 0
+        },
+        "version": "0.1.0a1",
+        "backend_available": true,
+        "runtime_files": 683,
+        "clean_environment": "Fresh venv without system site packages; unrelated cwd; no network install; removed afterward"
+      }
+    },
+    {
+      "id": 124465126346,
+      "name": "portable (windows-latest)",
+      "conclusion": "success",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291/job/124465126346",
+      "passed": 71,
+      "skipped": 24,
+      "clean_wheel_workflows": "passed; backend unavailable/refusal verified",
+      "skip_scope": "23 Linux boundary cases + POSIX FIFO"
+    },
+    {
+      "id": 124465126500,
+      "name": "portable (macos-latest)",
+      "conclusion": "success",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291/job/124465126500",
+      "passed": 72,
+      "skipped": 23,
+      "clean_wheel_workflows": "passed; backend unavailable/refusal verified",
+      "skip_scope": "23 Linux boundary cases"
+    },
+    {
+      "id": 124465126562,
+      "name": "portable (ubuntu-latest)",
+      "conclusion": "success",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291/job/124465126562",
+      "passed": 72,
+      "skipped": 0,
+      "clean_wheel_workflows": "passed; backend unavailable/refusal verified",
+      "skip_scope": "boundary file covered separately in required native job"
+    }
+  ],
+  "runtime_files": 683,
+  "apparmor_profile": "safeshell-bwrap//&safeshell-child (enforce)",
+  "artifact": {
+    "id": 13032768164,
+    "name": "linux-enforcement-evidence",
+    "url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176530291/artifacts/13032768164",
+    "archive_sha256": "82dc00e9c2fb15432c2dfb48431344a88654bc929825803f3654a71c27fc5c69",
+    "expires_at": "2027-01-29T06:25:18Z",
+    "files_sha256": {
+      "doctor.json": "50a6aaf08cde0483d0dad820f5e5e96c625c8215b79c00c5460a5185806a3181",
+      "doctor.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "host.json": "61d60cb7f8833d2d7becc5c3679b1d5d222dd8e249fb4768b89c3684813aa454",
+      "installed-smoke.json": "13e285d4cf1a894762a054dbd72a41724786fbc111a27dd5fd39842006563c3f",
+      "namespace-inventory.json": "3c8b88470b5d2be7c73ba7d69797f582e86595d4a035fafe3d41f8812c8452be",
+      "pytest.xml": "7c3590de7f3737dc2bb59f8807fa9cd8e3e1a291824c785622b034dffb91ef68",
+      "runtime-manifest.json": "3226b8fe647dc01a63e4a41485b33661ff6bfee33da2aad33f795e0d3b261203"
+    }
+  },
+  "source_sha256": {
+    ".github/apparmor/safeshell-bwrap": "5b1f75dc841e67f0623e7efa553632c655569b4a4d04145c72a5951d9c9c2269",
+    ".github/workflows/ci.yml": "0df22df5ab602c4a592d825a12777eb69df6d7f410d3515af49d9aac0f2e973a",
+    "MANIFEST.in": "f1f450351ddebe8c4d7db67da1f67b387d7f8c26a8005b3d038a5160e2e742c7",
+    "pyproject.toml": "2382b4dc67c82e7dfdc0890f81fccb5de55c1efd9ee9e3b54533667bb8c414c5",
+    "safeshell/__init__.py": "7fc6cbc7a1ce857cf9a1761105b043734f81e15ed4a67534f66e32c90ab458b1",
+    "safeshell/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+    "safeshell/analysis.py": "ee9a18f72a06a344932882c900fcbb28ae9cdebe86e020142819a134de0189c6",
+    "safeshell/audit.py": "49c304678a8bbb9370605cb85d40dff3a12e6d5c914be38e1c60de3b1ab0920c",
+    "safeshell/backend.py": "de68595f2a1c89273aea79b794cd0c9cdebbb8ba8684b4bd91ddf6a986e89bde",
+    "safeshell/cli.py": "0a6969ac568a1b472e7319ec71ccc0ae446344df616c12b742bebf0f1c25e4a8",
+    "safeshell/policy.py": "b35bd2b5884a05ad631414c90c8d7fcc06d6e779369756ff3ae065fb329c66c1",
+    "safeshell/runtime.py": "ce3e12573522366ad47f75154169131ca1c09da232b2a1ca57bff0484c6d8937",
+    "tests/conftest.py": "77c06087db6d3120f8b0b1036aa90d538af47980f1c194ed04d3f82785ac188a",
+    "tests/test_core.py": "51282022be41fa08a4a951b9984eaf7a96a69bb1c23eb0bb60be82a632dded89",
+    "tests/test_linux_boundary.py": "6ca395d3cb5bbc57745ceeb848a8af6efef5a5e7e826a9fc45e87507ac86b29b",
+    "tests/test_runtime.py": "fd8845eeb317835836afdf18b1421474290edaa03aa5a1f5fa59339658371616",
+    "tests/test_validation_gate.py": "7ece4acef06c96aa6194e5a6ab0bc9599d890bd6a7e460f24eb12eaf62f80f45",
+    "tools/capture_inventory.py": "58bc87dd6b485313dfd2c2a8379948968e6112c33ea8b406bfbb79d144a3b99d",
+    "tools/debian_vm.py": "131a5274f159bdab3b3ee475820cc8aa66b0288701846f674360b7da1b5237ec",
+    "tools/smoke_installed.py": "b4b5afa1987518e2795400fe9b6ac5c57bc8653b75f83f07608cf70110453ad6",
+    "tools/validate_linux.py": "a3a315f932a9daa3988b713aa54597c3b2c292576ebc67e1a6de06790f54d049"
+  },
+  "earlier_remote_attempts": [
+    {
+      "id": 41176290527,
+      "head_sha": "d91a85162b162da5fe5bebc7f532b0059a564053",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176290527",
+      "conclusion": "failure"
+    },
+    {
+      "id": 41176180094,
+      "head_sha": "addb02257ac8b67f3633ac890841c11a5f865bb0",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176180094",
+      "conclusion": "failure"
+    },
+    {
+      "id": 41176085007,
+      "head_sha": "96e5c442a7f63b1b9393c9812b65ee9c4553a34e",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176085007",
+      "conclusion": "failure"
+    },
+    {
+      "id": 41176023810,
+      "head_sha": "dc763822feaba1d610a0d5344f3c457bce15390f",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41176023810",
+      "conclusion": "failure"
+    },
+    {
+      "id": 41175911202,
+      "head_sha": "319fbf81a2d41219c2d261474c540d4b67f2c830",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41175911202",
+      "conclusion": "failure"
+    },
+    {
+      "id": 41175543723,
+      "head_sha": "0824db1ab4cfc35abe78490c7291100c2f5f8e80",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41175543723",
+      "conclusion": "failure"
+    },
+    {
+      "id": 41174695711,
+      "head_sha": "8c9c8d0fa367df14e21ff177064818e97a528d05",
+      "html_url": "https://github.com/HamzaGhebriche/SafeShell/actions/runs/41174695711",
+      "conclusion": "failure"
+    }
+  ]
+}

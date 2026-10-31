@@ -2,7 +2,8 @@
 
 **Experimental alpha. Not published. Not a production security boundary certification.**
 The distribution version is `0.1.0a1`; this is the first review candidate for the human-facing
-v0.1.0-alpha label. No tag, hosted release, package upload, commit or push was created.
+v0.1.0-alpha label. The user authorized normal commits/pushes to the dedicated private SafeShell repository.
+No tag, hosted release or package upload was created; visibility remains private.
 
 The candidate covers three workflows: inspect commands without executing them; execute within
 a fail-closed Linux bubblewrap/seccomp configuration; review local metadata-only history.
@@ -23,16 +24,21 @@ set 1–86400 seconds and 1 byte–64 MiB. Limit exits are 124/125; JSON session
 distinguish those from ordinary child exit codes. No CPU, memory, process-count or disk quotas
 are enforced. Do not treat this as complete resource containment.
 
-Validation: 95 tests passed without skips on Ubuntu/WSL and a separate Debian native-kernel KVM
-guest. Native Ubuntu CI cannot run for this unpublished standalone folder inside an unrelated
-parent repository; that is a remaining release gate. See [actual evidence](docs/VALIDATION.md),
+Validation: native Ubuntu GitHub CI passed all 95 tests with zero skips and clean-wheel
+workflows on commit `eb621ed941f36e8d869897e2ca41d20121151776`. All three portable jobs
+passed, including Windows/macOS refusal. Ubuntu CI loads a scoped AppArmor policy while
+retaining the global user-namespace restriction; stock Ubuntu setup may refuse execution.
+Earlier local WSL and separate Debian native-kernel KVM runs each passed 95/0; those are
+historical source checkpoints, not reruns of the final CI commit. See [actual evidence](docs/VALIDATION.md),
 [filesystem inventory](docs/SANDBOX.md), and [the demonstration](docs/DEMO.md).
 
 Review artifacts are the alpha wheel/source archive under `dist/`, their SHA256SUMS, current
-validation summaries, runtime/namespace snapshots and clean-install workflow reports. Builds
-are local; hashes identify the exact reviewed bytes, not reproducible-build certification.
+validation summaries, runtime/namespace snapshots and clean-install workflow reports.
+Local artifacts identify earlier local checkpoints; the remote CI wheel hash and evidence
+are separately recorded in `docs/validation-remote-ci.json`. Hashes identify reviewed bytes,
+not reproducible-build certification.
 
-Before any publication: complete native Ubuntu CI for the exact source, review the runtime/ELF
+Before any publication: require successful CI on the intended final source, review the runtime/ELF
 resolver and resource-lifecycle changes, inspect artifacts, and acknowledge documented races,
 kernel trust, filesystem/platform scope and resource gaps. Independent review remains desirable;
 no independent security audit has been completed.

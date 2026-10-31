@@ -78,3 +78,13 @@ before connection. No real remote service or packet capture is required or claim
 See [bubblewrap options](https://github.com/containers/bubblewrap/blob/main/bwrap.xml) and
 [the backend source](https://github.com/containers/bubblewrap/blob/main/bubblewrap.c). There is
 no host command fallback, network-enabled policy, custom kernel boundary, or extra backend.
+
+## Native Ubuntu CI host policy
+
+Native GitHub Ubuntu uses an application-scoped AppArmor setup profile and an
+enforced stacked guest profile, retaining the global user-namespace restriction.
+Actual failed CI runs exposed this prerequisite; earlier local WSL had not
+exercised it. AppArmor permits reachable files and adds capability/user-namespace
+denials. Minimal Bubblewrap mounts and seccomp remain mandatory. This policy is
+not another backend or a claim of stock-Ubuntu out-of-box execution. See
+[the exact scoped policy, assertions and commands](CI_HANDOFF.md).

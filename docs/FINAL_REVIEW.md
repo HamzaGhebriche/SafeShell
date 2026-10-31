@@ -1,15 +1,17 @@
 # Final alpha review
 
-Recommendation: **proceed with controlled experimental-alpha testing; hold publication until
-native Ubuntu CI succeeds for the exact candidate commit**. No publication is authorized here.
+Recommendation: **proceed with controlled private experimental-alpha testing**. Native Ubuntu
+CI and all portable jobs actually passed on the recorded candidate commit; see VALIDATION.md.
+No publication is authorized here. Production use remains outside this recommendation.
 This is a source/diff and artifact review, not an independent security audit.
 
 ## Review scope and findings
 
-The folder has no dedicated candidate Git baseline: its visible Git root/remote belong to an
-unrelated ancestor repository. The review therefore compared product sources with the prior
-reviewed wheel, inspected the source/archive changes, and followed parsing → policy → launch →
-history paths, runtime inventory/ELF selection, packaging metadata and CI/test entry points.
+The original local review had no dedicated Git baseline and compared sources with the prior
+reviewed wheel. The user subsequently authorized a dedicated private repository and normal
+commits/pushes. The remote follow-up reviewed those diffs, parsing → policy → launch → history
+paths, runtime/ELF selection, packaging and actual CI failures. The ancestor repository was
+untouched. See [repository identity and CI setup](CI_HANDOFF.md).
 
 | Finding | Resolution / evidence |
 | --- | --- |
@@ -17,6 +19,12 @@ history paths, runtime inventory/ELF selection, packaging metadata and CI/test e
 | Validator maintained an explicit list of test files | Replaced with discovery of all `tests/`; required mode rejects every skip and absence of passing boundary tests. Existing subprocess regressions exercise the rejection gate with/without terminal output. |
 | Fixture docstring described /usr/local as exposed | Corrected: it is an outside dummy location that must be absent; the setuid helper uses an explicitly selected temporary workspace. |
 | Installed smoke did not include the walkthrough's hard denial | Added actual `sudo id` denial with exit 3 even with --yes, including policy/decision assertions. This runs on the installed wheel, not a mocked backend. |
+| Unpinned Ruff selected a newer default rule set in CI | Pinned Ruff 0.17.3 and fixed all reported imports, UTC/context management and subprocess diagnostics. No lint rules disabled; mandatory seccomp rules and fail-closed callers preserved. |
+| Old preinstalled setuptools accepted by an unqualified install then failed license metadata | Both jobs explicitly require setuptools>=77, matching pyproject's declared backend requirement. Builds remain non-isolated and fail on missing prerequisites. |
+| macOS temporary path aliases caused a false source-shadow assertion | Resolve temporary root and imported package paths before containment comparison. Fresh venv/unrelated cwd and source exclusion remain mandatory. |
+| Native Ubuntu AppArmor denied Bubblewrap setup | Added a CI-only enforced setup/stacked-guest policy. Keep global userns restriction, NNP and all backend restrictions; verify the exact enforced guest stack before tests. No globally disabled host protection. |
+| Confined inherited null descriptor metadata was denied | Scope disconnected-path metadata lookup with a synthetic child prefix. Keep actual secret-file/socket descriptor identity assertions unchanged. |
+| One-second cleanup fixture could time out before guest startup | Use a five-second timeout with an eight-second descendant write delay and wait another 8.3 seconds after termination. Both readiness and no-late-write checks remain required; no skip/xfail introduced. Runtime CLI limits unchanged. |
 
 No additional execution-boundary regression was identified in the reviewed changes. The
 backend remains fail-closed; static risk never alters mounts/filtering; argv mode never becomes
@@ -39,4 +47,4 @@ macOS execution, other architectures/filesystems and independent audit remain un
 unsupported. These limits are reflected in README, release notes and ALPHA_REVIEW.
 
 See [verified results](VALIDATION.md), [CI handoff](CI_HANDOFF.md), [five-minute walkthrough](DEMO.md)
-and [tester checklist](TESTER_CHECKLIST.md). Remote CI configuration review is not a CI pass.
+and [tester checklist](TESTER_CHECKLIST.md). Remote successes and failed setup attempts are recorded separately from earlier local validation.
