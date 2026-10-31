@@ -1,22 +1,23 @@
 """Linux bubblewrap launcher. There is intentionally no host fallback."""
 
-from dataclasses import asdict, dataclass
-from pathlib import Path
 import ctypes
 import errno
 import os
-import sys
+import selectors
 import shutil
 import signal
 import stat
 import subprocess
+import sys
 import tempfile
-import selectors
-import time
 import threading
+import time
+from contextlib import contextmanager
+from dataclasses import asdict, dataclass
+from pathlib import Path
 
-from .policy import Policy, environment
 from . import runtime
+from .policy import Policy, environment
 
 
 @dataclass
@@ -122,6 +123,7 @@ def check_workspace_contents(root: Path) -> None:
                 )
 
 
+@contextmanager
 def seccomp_file():
     """Export libseccomp's architecture-correct BPF, inherited only by bwrap."""
     # find_library may spawn ldconfig/compiler helpers on the host. Load the
@@ -140,65 +142,65 @@ def seccomp_file():
     ctx = lib.seccomp_init(0x7FFF0000)  # SCMP_ACT_ALLOW
     if not ctx:
         raise RuntimeError("Cannot create seccomp context")
-    stream = tempfile.TemporaryFile()
     try:
-        names = (
-            "socket",
-            "socketpair",
-            "connect",
-            "bind",
-            "listen",
-            "accept",
-            "accept4",
-            "sendto",
-            "sendmsg",
-            "sendmmsg",
-            "recvmsg",
-            "recvmmsg",
-            "socketcall",
-            "io_uring_setup",
-            "ptrace",
-            "bpf",
-            "mount",
-            "umount2",
-            "pivot_root",
-            "setns",
-            "unshare",
-            "keyctl",
-            "add_key",
-            "request_key",
-            "fsopen",
-            "fsconfig",
-            "fsmount",
-            "fspick",
-            "open_tree",
-            "move_mount",
-            "mount_setattr",
-            "pidfd_getfd",
-            "process_vm_readv",
-            "process_vm_writev",
-            "perf_event_open",
-        )
-        for syscall in names:
-            number = lib.seccomp_syscall_resolve_name(syscall.encode())
-            if number < 0 and syscall in (
+        with tempfile.TemporaryFile() as stream:
+            names = (
                 "socket",
+                "socketpair",
                 "connect",
+                "bind",
+                "listen",
+                "accept",
+                "accept4",
+                "sendto",
+                "sendmsg",
+                "sendmmsg",
+                "recvmsg",
+                "recvmmsg",
+                "socketcall",
                 "io_uring_setup",
                 "ptrace",
-                "unshare",
+                "bpf",
+                "mount",
+                "umount2",
+                "pivot_root",
                 "setns",
-            ):
-                raise RuntimeError(f"libseccomp cannot resolve mandatory syscall: {syscall}")
-            if number >= 0 and lib.seccomp_rule_add(ctx, 0x00050000 | errno.EPERM, number, 0) != 0:
-                raise RuntimeError("Cannot install required seccomp rule")
-        if lib.seccomp_export_bpf(ctx, stream.fileno()) != 0:
-            raise RuntimeError("Cannot export seccomp filter")
-        stream.seek(0)
-        return stream
-    except BaseException:
-        stream.close()
-        raise
+                "unshare",
+                "keyctl",
+                "add_key",
+                "request_key",
+                "fsopen",
+                "fsconfig",
+                "fsmount",
+                "fspick",
+                "open_tree",
+                "move_mount",
+                "mount_setattr",
+                "pidfd_getfd",
+                "process_vm_readv",
+                "process_vm_writev",
+                "perf_event_open",
+            )
+            for syscall in names:
+                number = lib.seccomp_syscall_resolve_name(syscall.encode())
+                if number < 0 and syscall in (
+                    "socket",
+                    "connect",
+                    "io_uring_setup",
+                    "ptrace",
+                    "unshare",
+                    "setns",
+                ):
+                    raise RuntimeError(f"libseccomp cannot resolve mandatory syscall: {syscall}")
+                if (
+                    number >= 0
+                    and lib.seccomp_rule_add(ctx, 0x00050000 | errno.EPERM, number, 0) != 0
+                ):
+                    raise RuntimeError("Cannot install required seccomp rule")
+            if lib.seccomp_export_bpf(ctx, stream.fileno()) != 0:
+                raise RuntimeError("Cannot export seccomp filter")
+            stream.seek(0)
+            yield stream
     finally:
         lib.seccomp_release(ctx)
 
@@ -282,12 +284,12 @@ def discover() -> Capability:
             result = subprocess.run(
                 launch_args(binary, Path(directory), ["/usr/bin/true"], rules.fileno()),
                 stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 env={},
                 close_fds=True,
                 pass_fds=(rules.fileno(),),
                 timeout=10,
+                check=False,
             )
             if result.returncode:
                 return Capability(

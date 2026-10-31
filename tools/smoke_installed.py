@@ -4,10 +4,10 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
 import tempfile
 import venv
+from pathlib import Path
 
 
 def main():
@@ -46,8 +46,7 @@ def main():
             check=True,
             cwd=project,
             env=environment,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             timeout=120,
         )
         package_details = subprocess.check_output(
@@ -75,6 +74,7 @@ def main():
                 capture_output=True,
                 text=True,
                 timeout=60,
+                check=False,
             )
             assert result.returncode == expected, (
                 name,
@@ -116,6 +116,7 @@ def main():
             capture_output=True,
             text=True,
             timeout=60,
+            check=False,
         )
         details = json.loads(doctor.stdout)
         available = details["available"]

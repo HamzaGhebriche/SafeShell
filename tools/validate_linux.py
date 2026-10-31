@@ -6,7 +6,7 @@ test directory with a zero-skip gate, then removes the fixtures.
 No host namespace/AppArmor/sysctl protections are changed.
 """
 
-from pathlib import Path
+import argparse
 import json
 import os
 import platform
@@ -14,8 +14,7 @@ import re
 import subprocess
 import sys
 import tempfile
-import argparse
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -143,6 +142,7 @@ def main():
             capture_output=True,
             text=True,
             **identity,
+            check=False,
         )
         (destination / "doctor.json").write_text(probe.stdout)
         (destination / "doctor.stderr").write_text(probe.stderr)
@@ -163,10 +163,18 @@ def main():
                 capture_output=True,
                 text=True,
                 **identity,
+                check=False,
             )
             (destination / "namespace-inventory.json").write_text(inventory.stdout)
             if inventory.returncode:
                 raise RuntimeError(inventory.stderr)
+            expected_profile = os.environ.get("SAFESHELL_EXPECT_APPARMOR_PROFILE")
+            if (
+                expected_profile
+                and json.loads(inventory.stdout).get("apparmor_profile")
+                != expected_profile + " (enforce)"
+            ):
+                raise RuntimeError("Expected AppArmor child confinement was not observed")
         # Still run tests if doctor fails: failures and zero-pass gate are evidence.
         with tempfile.TemporaryDirectory(prefix="safeshell-test-evidence-") as evidence:
             # Parent directory stays root-owned in a root harness, so the test
@@ -191,6 +199,7 @@ def main():
                 cwd=ROOT,
                 env=environment,
                 **identity,
+                check=False,
             )
             (destination / "pytest.xml").write_bytes(report.read_bytes())
         return tests.returncode or probe.returncode

@@ -146,7 +146,7 @@ See [release notes](RELEASE_NOTES.md), [changelog](CHANGELOG.md), [actual result
 [architecture](docs/ARCHITECTURE.md), [security reporting](SECURITY.md), and [contributing](CONTRIBUTING.md).
 
 ```sh
-python -m pip install pytest ruff build 'setuptools>=77'
+python -m pip install pytest ruff==0.17.3 build 'setuptools>=77'
 python -m ruff format --check .
 python -m ruff check .
 python -m pytest -ra --ignore=tests/test_linux_boundary.py

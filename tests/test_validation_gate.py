@@ -1,10 +1,10 @@
 """Exercise the actual pytest gate in subprocesses, including plugin-less output."""
 
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -28,7 +28,11 @@ def test_required_mode_rejects_skips(tmp_path, terminal):
     if not terminal:
         args += ["-p", "no:terminal"]
     result = subprocess.run(
-        args, env=dict(os.environ, SAFESHELL_REQUIRE_BACKEND="1"), capture_output=True, text=True
+        args,
+        env=dict(os.environ, SAFESHELL_REQUIRE_BACKEND="1"),
+        capture_output=True,
+        text=True,
+        check=False,
     )
     assert result.returncode == 1, (result.stdout, result.stderr)
 
@@ -50,6 +54,7 @@ def test_required_mode_rejects_missing_boundary_tests(tmp_path):
         env=dict(os.environ, SAFESHELL_REQUIRE_BACKEND="1"),
         capture_output=True,
         text=True,
+        check=False,
     )
     assert result.returncode == 1, (result.stdout, result.stderr)
 

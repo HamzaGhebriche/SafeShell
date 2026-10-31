@@ -1,12 +1,12 @@
 """Private metadata records. Never persist child output or environment values."""
 
-from datetime import datetime, timezone
-from pathlib import Path
 import json
 import os
-import stat
 import re
+import stat
 import uuid
+from datetime import UTC, datetime
+from pathlib import Path
 
 
 def safe(text: str) -> str:
@@ -44,7 +44,7 @@ def new_record(argv: list[str], report: dict, decision: dict, backend: dict, aud
     return {
         "schema_version": 1,
         "id": str(uuid.uuid4()),
-        "started_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": datetime.now(UTC).isoformat(),
         "ended_at": None,
         "command": redact(argv) if audit == "redacted" else "[metadata only]",
         "risk": report["risk"],

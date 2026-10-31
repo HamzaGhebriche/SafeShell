@@ -5,6 +5,7 @@ permissions:
 jobs:
   portable:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
@@ -13,7 +14,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install pytest ruff build setuptools
+      - run: python -m pip install pytest ruff==0.17.3 build setuptools
       - run: python -m ruff check .
       - run: python -m ruff format --check .
       - run: python -m pytest -ra --ignore=tests/test_linux_boundary.py
@@ -27,14 +28,24 @@ jobs:
     timeout-minutes: 15
     env:
       SAFESHELL_REQUIRE_BACKEND: '1'
+      SAFESHELL_EXPECT_APPARMOR_PROFILE: safeshell-child
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: sudo apt-get update && sudo apt-get install -y bubblewrap libseccomp2 build-essential python3-venv
+      - run: sudo apt-get update && sudo apt-get install -y bubblewrap libseccomp2 build-essential python3-venv apparmor
+      - name: Load application-scoped Bubblewrap setup policy
+        run: |
+          sudo apparmor_parser --replace .github/apparmor/safeshell-bwrap
+          sysctl kernel.apparmor_restrict_unprivileged_userns
       - run: python -m pip install pytest build 'setuptools>=77'
       - run: python tools/validate_linux.py
+      - name: Record namespace policy diagnostics
+        if: failure()
+        run: |
+          sudo aa-status
+          sudo journalctl -k --no-pager -n 80
       - run: python -m build --no-isolation
       - run: python tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl --require-backend > validation-results/installed-smoke.json
       - uses: actions/upload-artifact@v4

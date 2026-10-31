@@ -4,15 +4,14 @@ Only fixed system programs, packaged Python stdlib code, and transitive ELF depe
 are exposed. This is mount selection, not an ELF loader or a new sandbox backend.
 """
 
-from functools import lru_cache
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import stat
 import struct
-
+from functools import lru_cache
+from pathlib import Path
 
 PROGRAMS = (
     "bash",

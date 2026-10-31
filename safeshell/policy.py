@@ -1,10 +1,10 @@
 """Strict policies can only narrow the built-in trust baseline."""
 
-from dataclasses import asdict, dataclass, field
-from pathlib import Path
 import os
 import stat
 import tomllib
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 
 
 @dataclass

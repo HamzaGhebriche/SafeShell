@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -307,11 +307,11 @@ def test_hardlink_scan_rule(tmp_path):
     from types import SimpleNamespace
 
     (tmp_path / "dummy").write_text("dummy")
-    with patch.object(
-        Path, "lstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG, st_nlink=2)
+    with (
+        patch.object(Path, "lstat", return_value=SimpleNamespace(st_mode=stat.S_IFREG, st_nlink=2)),
+        pytest.raises(ValueError, match="hardlinks"),
     ):
-        with pytest.raises(ValueError, match="hardlinks"):
-            backend.check_workspace_contents(tmp_path)
+        backend.check_workspace_contents(tmp_path)
 
 
 def test_launch_error_no_second_attempt(tmp_path, monkeypatch, capsys):
@@ -350,9 +350,11 @@ def test_unreadable_workspace_scan_fails_closed(tmp_path):
         kwargs["onerror"](PermissionError("dummy permission failure"))
         return iter(())
 
-    with patch.object(backend.os, "walk", side_effect=unreadable):
-        with pytest.raises(ValueError, match="Cannot inspect"):
-            backend.check_workspace_contents(tmp_path)
+    with (
+        patch.object(backend.os, "walk", side_effect=unreadable),
+        pytest.raises(ValueError, match="Cannot inspect"),
+    ):
+        backend.check_workspace_contents(tmp_path)
 
 
 def test_probe_not_described_as_effective_enforcement():
@@ -362,9 +364,9 @@ def test_probe_not_described_as_effective_enforcement():
 
 
 def test_missing_required_seccomp_rule_fails_closed(tmp_path):
+    import tempfile
     from types import SimpleNamespace
     from unittest.mock import Mock
-    import tempfile
 
     lib = SimpleNamespace(
         **{
@@ -384,9 +386,10 @@ def test_missing_required_seccomp_rule_fails_closed(tmp_path):
     with (
         patch.object(backend.ctypes, "CDLL", return_value=lib),
         patch.object(backend.tempfile, "TemporaryFile", side_effect=lambda: original(dir=tmp_path)),
+        pytest.raises(RuntimeError, match="mandatory syscall: socket"),
+        backend.seccomp_file(),
     ):
-        with pytest.raises(RuntimeError, match="mandatory syscall: socket"):
-            backend.seccomp_file()
+        pass
     lib.seccomp_release.assert_called_once_with(123)
 
 
@@ -440,6 +443,7 @@ def test_nonregular_history_record_cannot_block(tmp_path):
         capture_output=True,
         text=True,
         timeout=5,
+        check=False,
     )
     assert result.returncode == 2
     assert json.loads(result.stdout)["error"] == "Invalid history record"

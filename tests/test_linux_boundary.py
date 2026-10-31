@@ -2,19 +2,18 @@
 
 import json
 import os
-from pathlib import Path
 import signal
 import socket
 import stat
 import subprocess
 import sys
 import time
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from safeshell import backend, policy
-
 
 pytestmark = pytest.mark.usefixtures("enforcement")
 PYTHON = "/usr/bin/python3"

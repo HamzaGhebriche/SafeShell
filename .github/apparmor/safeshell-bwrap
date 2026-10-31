@@ -1,0 +1,17 @@
+# CI host setup only. Do not disable AppArmor's global user-namespace restriction.
+# Parent permissions authorize trusted bwrap to assemble its namespaces; the exec
+# transition removes capabilities/user namespaces from every sandbox program.
+abi <abi/4.0>,
+include <tunables/global>
+
+profile safeshell-bwrap /usr/bin/bwrap flags=(default_allow) {
+  userns,
+  capability,
+  /** px -> safeshell-child,
+}
+
+profile safeshell-child flags=(default_allow) {
+  audit deny capability,
+  deny userns,
+  /** ix,
+}

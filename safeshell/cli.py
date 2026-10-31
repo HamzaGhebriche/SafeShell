@@ -1,12 +1,12 @@
 """CLI presentation and orchestration."""
 
 import argparse
-from dataclasses import asdict
-from datetime import datetime, timezone
 import json
-from pathlib import Path
-import sys
 import stat
+import sys
+from dataclasses import asdict
+from datetime import UTC, datetime
+from pathlib import Path
 
 from . import __version__, analysis, audit, backend, policy, runtime
 
@@ -246,7 +246,7 @@ def execute(args) -> int:
             record["error"] = audit.safe(str(exc))
             status = 4
     record["exit_code"] = status
-    record["ended_at"] = datetime.now(timezone.utc).isoformat()
+    record["ended_at"] = datetime.now(UTC).isoformat()
     audit.save(record)
     if machine:
         emit({"schema_version": 1, "session": record, "report": report}, True)

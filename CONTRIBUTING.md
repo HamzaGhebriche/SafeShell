@@ -1,7 +1,7 @@
 # Contributing
 
 Use Python 3.11+. Install development tools with
-`python -m pip install pytest ruff build 'setuptools>=77'`.
+`python -m pip install pytest ruff==0.17.3 build 'setuptools>=77'`.
 Run `python -m ruff format --check .`, `python -m ruff check .`,
 `python -m pytest -ra --ignore=tests/test_linux_boundary.py`, and `python -m build --no-isolation`.
 For real Linux enforcement checks, use `python3 tools/validate_linux.py` on a disposable VM

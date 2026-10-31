@@ -7,15 +7,14 @@ ssh-keygen, ssh and scp. No host folder, agent or real SSH key is shared with th
 import argparse
 import hashlib
 import json
-from pathlib import Path
+import shlex
 import shutil
 import socket
 import subprocess
 import tempfile
 import time
 import urllib.request
-import shlex
-
+from pathlib import Path
 
 BASE = "https://cloud.debian.org/images/cloud/bookworm/latest/"
 IMAGE = "debian-12-genericcloud-amd64.qcow2"
@@ -171,7 +170,10 @@ def main():
                 print("Waiting for Debian guest SSH and signed-package provisioning", flush=True)
                 deadline = time.monotonic() + 600
                 while subprocess.run(
-                    [*ssh, "true"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    [*ssh, "true"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=False,
                 ).returncode:
                     if process.poll() is not None or time.monotonic() > deadline:
                         raise RuntimeError(
@@ -187,7 +189,9 @@ def main():
                     ]
                 )
                 tests = subprocess.run(
-                    [*ssh, "cd candidate && python3 tools/validate_linux.py"], timeout=900
+                    [*ssh, "cd candidate && python3 tools/validate_linux.py"],
+                    timeout=900,
+                    check=False,
                 )
                 if args.wheel and tests.returncode == 0:
                     call(
