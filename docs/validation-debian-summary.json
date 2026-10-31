@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-31",
+  "candidate": "v0.1.0-alpha",
+  "package_version": "0.1.0a1",
+  "environment": {
+    "platform": "Linux-6.1.0-54-cloud-amd64-x86_64-with-glibc2.36",
+    "python": "3.11.2 (main, Oct  7 2026, 12:35:07) [GCC 12.2.0]",
+    "bubblewrap": "bubblewrap 0.8.0",
+    "test_uid": 1000
+  },
+  "tests": {
+    "tests": 95,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "runtime_files": 677,
+  "runtime_manifest_sha256": "f9ff7176577daab69fc1bac980e408dcb589a24badbd79ff979c8af1becb3da9",
+  "clean_install_workflows": {
+    "version": 0,
+    "explain": 0,
+    "explain-script": 0,
+    "policy-init": 0,
+    "policy-validate": 0,
+    "doctor": 0,
+    "policy-denial": 3,
+    "run": 0,
+    "output-limit": 125,
+    "timeout": 124,
+    "history": 0,
+    "history-show": 0,
+    "history-delete": 0,
+    "history-after-delete": 0
+  },
+  "tested_wheel_sha256": "5770924190614b036709725858d3ac32e58fd211de52709dc2b2e3d017675826",
+  "source_sha256": {
+    ".github/workflows/ci.yml": "a7ede87db9bba392033e045865b9efe8e3272bfd717c786a75c072db73f74c03",
+    "MANIFEST.in": "d6db6310e0d947242659e62a0d3cabf97cb3126006e143b515e1095602bea9c6",
+    "pyproject.toml": "0b61e56b17d5afd4f5f4d6b314cf2aca55a9e00ae5ecdc07f01b12c3a19a6e60",
+    "safeshell/__init__.py": "7fc6cbc7a1ce857cf9a1761105b043734f81e15ed4a67534f66e32c90ab458b1",
+    "safeshell/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+    "safeshell/analysis.py": "ee9a18f72a06a344932882c900fcbb28ae9cdebe86e020142819a134de0189c6",
+    "safeshell/audit.py": "9e8a61407af637c3234534741d675d93751e39648a5c78d8385dfec5a749e50c",
+    "safeshell/backend.py": "e65a33ba69da918aadddd36ccce424664f285e6ce64ecfbb432bae70acc65c5a",
+    "safeshell/cli.py": "fcc47600c2a09b344a3d362cb47ab8e5310076dc61eab7e48b763ee9750dcb89",
+    "safeshell/policy.py": "d4d4cec6cd1ead9acb1a2299fc4d03cb9f21b4e30a0709ec5d7c76bc08ad48a0",
+    "safeshell/runtime.py": "dd9e9ad32b8ba30a492a9e6d5a99a62ff8385b8a097edad7dec01aa6b9809d32",
+    "tests/conftest.py": "77c06087db6d3120f8b0b1036aa90d538af47980f1c194ed04d3f82785ac188a",
+    "tests/test_core.py": "763eb93066b77442e31f6b31ed56ed5cf942cfc35bc87d185863d1af0e8e1269",
+    "tests/test_linux_boundary.py": "27c4d9ad19223ba304b2c183de00e464647a73bca822bbccad97477212a390d8",
+    "tests/test_runtime.py": "fd8845eeb317835836afdf18b1421474290edaa03aa5a1f5fa59339658371616",
+    "tests/test_validation_gate.py": "9c4bdbcca403e87b27207ae08025f5877c53fd0e2dc726b2208383caf35b50a6",
+    "tools/capture_inventory.py": "8ffd77e8764c90e85654d878b8f51ded8482db2241f27a2a83923ba74a622456",
+    "tools/debian_vm.py": "df0adcba08166bae7f6d8909bbb13522eefcc8a93ddb709a2369bb3270914c5f",
+    "tools/smoke_installed.py": "3c0e6ae3db1208d5a0617d171efe0bdfd444018c349b14e46c983ddb18075c74",
+    "tools/validate_linux.py": "18e83ee3a6f3e936e307bf8dcd5984c937ef2a925011e2bb1dbdbda96b914dde"
+  },
+  "native_ubuntu_ci": "unverified; no candidate commit/CI target and no push authorized",
+  "vm": {
+    "url": "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2",
+    "sha512": "0464b5d4ae3aa4f658468d88da83af7857b71548b30d46dcb6282770955a747fb95a983476db90d25afd0653af607224c7ebd05122ab71faa106fd712aaad652",
+    "source_sha256": "678f3df803801f0a217136d8c6e5e91a552a4a2f0c80f6ad85b291a62db5237d",
+    "hypervisor": "QEMU KVM, no host folder mounts"
+  }
+}

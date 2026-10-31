@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.test-tmp*/
+.test-hardening*/
+.test-alpha*/
+.build-tmp/
+.debug-history/
+.demo-history/
+.demo-workspace/
+build/
+dist/
+validation-results/
+.vagrant/
+.venv/

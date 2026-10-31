@@ -1,0 +1,8 @@
+version = 1
+preset = "development"
+workspace = "."
+network = "off"
+environment = []
+confirmation = "risk"
+audit = "metadata"
+hard_denied = ["privilege", "credentials", "containers"]

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "safeshell-cli"
+version = "0.1.0a1"
+description = "Local-first command inspection and fail-closed Linux execution"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = []
+classifiers = ["Development Status :: 3 - Alpha", "Environment :: Console", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3"]
+
+[project.scripts]
+safeshell = "safeshell.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["safeshell*"]
+
+[tool.ruff]
+line-length = 100
