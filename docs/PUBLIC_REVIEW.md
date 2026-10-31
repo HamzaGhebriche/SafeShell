@@ -46,6 +46,19 @@ portable guest paths instead of a developer's local Windows checkout.
 
 ## Evidence and limitations
 
+The public-preparation code/test/workflow checkpoint
+`022f37bfcf674eb5dc437d29f5526e8bb4800943` passed
+[checks 41180095409](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41180095409):
+native Ubuntu **97/0 skips**, portable Ubuntu **74/0**, Windows **73/24 explicit
+skips**, macOS **74/23 explicit skips**. All builds/clean-wheel workflows and the
+new dummy boundary/cleanup demonstrations passed. Artifact checks confirmed
+683-file runtime equality and the exact enforced AppArmor stack.
+The subsequent history scan through that checkpoint covered **10 commits / 114
+unique blobs / 517184 bytes**, again with no identified credentials/private runtime
+artifacts and no tracked temporary helper. Final staged text and reachable history
+are rechecked before publication. Full SHA/results/links and hashes are recorded
+in [validation-public-ci.json](validation-public-ci.json).
+
 [VALIDATION.md](VALIDATION.md) records real CI results and source checkpoints.
 The prerelease body records the final tested tag SHA, final workflow URL and exact
 asset SHA256 values. Builds/clean installs and native boundary CI must pass before

@@ -8,7 +8,46 @@ See [PUBLIC_REVIEW.md](PUBLIC_REVIEW.md), [VirtualBox](VIRTUALBOX.md) and
 successful final workflow and asset checksums. Earlier results below are tied to their
 recorded source checkpoints and must not be relabeled as final-tag reruns.
 
-## Actual remote GitHub CI — 2026-10-31
+## Public prerelease preparation - actual remote results
+
+Commit **`022f37bfcf674eb5dc437d29f5526e8bb4800943`** on `main`:
+[checks 41180095409: SUCCESS](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41180095409).
+The receipt was downloaded and checked independently, rather than inferred from
+workflow configuration. [Machine-readable evidence](validation-public-ci.json).
+
+| Job | Actual result |
+| --- | --- |
+| [Native Ubuntu linux-boundary](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41180095409/job/124475556979) | **97 passed, zero failures/errors/skips**, all 23 boundary cases; build, required-backend clean wheel and release-asset checks passed |
+| [Portable Ubuntu](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41180095409/job/124475556974) | **74 passed, zero skips**; lint/format/build/clean wheel passed; complete boundary file covered separately by required native job |
+| [Portable Windows](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41180095409/job/124475556957) | **73 passed, 24 explicit skips**: 23 unsupported Linux boundary cases + POSIX FIFO; build/clean wheel and refusal passed |
+| [Portable macOS](https://github.com/HamzaGhebriche/SafeShell/actions/runs/41180095409/job/124475556998) | **74 passed, 23 explicit Linux boundary skips**; build/clean wheel and refusal passed |
+
+The native receipt confirms backend available, 683 planned/observed runtime files
+equal, the exact enforced AppArmor stack, and installed-wheel dummy outside/home/
+symlink denial, socket EPERM, environment/privilege checks and delayed-descendant
+cleanup. Policy denial=3, protected run=0, timeout=124 and output-limit=125 passed.
+The Ubuntu global userns restriction remained enabled. No setup failure or skip
+was accepted as enforcement evidence. Portable CI now rejects unexpected skips.
+
+`alpha-distributions` contains the checked wheel, sdist and SHA256SUMS from that
+checkout; evidence/artifact hashes and source hashes are in the JSON receipt.
+The documentation-only follow-up preserves code/test/workflow hashes. Its final
+commit and the release tag must pass CI again; the published prerelease body is
+the final tag/SHA/run/asset-hash record. These earlier artifact bytes are not
+silently substituted for the final tagged build.
+
+Local public-preparation checks: Ruff 0.17.3 format/lint, build/content checks and
+fresh offline wheel workflows passed on Windows/Python 3.14.0. Local pytest:
+**72 passed, 25 explicit skips** (23 Linux cases, FIFO and a denied hardlink
+fixture). The initial local build failed because the desktop sandbox's default
+temp directory was unwritable; rerunning with a workspace-local TMP/TEMP passed.
+That local environment issue is separate from the successful native CI build.
+
+VirtualBox fresh-guest UI installation has not been automated or represented as
+passed; guide command flows are covered by native Ubuntu and installed-wheel
+checks. Earlier native Debian/KVM and WSL results below remain separate checkpoints.
+
+## Earlier private-checkpoint remote CI - 2026-10-31
 
 Candidate commit: **`eb621ed941f36e8d869897e2ca41d20121151776`**, branch
 `codex/safeshell-alpha-review`.
