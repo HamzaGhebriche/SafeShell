@@ -1,12 +1,13 @@
 # CI host setup only. Do not disable AppArmor's global user-namespace restriction.
 # Parent permissions authorize trusted bwrap to assemble its namespaces; the exec
-# transition removes capabilities/user namespaces from every sandbox program.
+# stacked exec profile removes capabilities/user namespaces from guest programs.
 abi <abi/4.0>,
 include <tunables/global>
 
 # Enforce mode is intentional: the hosted kernel retained the default_allow
-# setup domain across exec. These explicit permissions replace implicit allow
-# all with the operations bwrap needs; child programs cannot retain this domain.
+# setup domain across exec. Explicit permissions replace implicit allow all.
+# Stacking adds the child restrictions without removing the original domain,
+# preserving no-new-privileges (which correctly rejects replacement transitions).
 # Only the trusted namespace assembler needs disconnected-path lookup while it
 # replaces its mount namespace. Guest code transitions to a separate profile
 # without this flag. File access in this setup domain is already path-wide.
@@ -17,20 +18,20 @@ profile safeshell-bwrap /usr/bin/bwrap flags=(attach_disconnected) {
   # libc if_nametoindex uses this socket for bwrap's loopback lookup.
   network unix dgram,
   signal,
-  ptrace (read, readby) peer=safeshell-bwrap,
+  ptrace (read, readby) peer={safeshell-bwrap,safeshell-bwrap//&safeshell-child},
   mount,
   umount,
   pivot_root,
   userns,
   capability,
-  /** px -> safeshell-child,
+  /** px -> safeshell-bwrap//&safeshell-child,
 }
 
 profile safeshell-child {
   / r,
   /** mrwkl,
   signal,
-  ptrace (read, readby) peer=safeshell-child,
+  ptrace (read, readby) peer=safeshell-bwrap//&safeshell-child,
   audit deny capability,
   deny userns,
   /** ix,

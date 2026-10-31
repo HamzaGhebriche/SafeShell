@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 15
     env:
       SAFESHELL_REQUIRE_BACKEND: '1'
-      SAFESHELL_EXPECT_APPARMOR_PROFILE: safeshell-child
+      SAFESHELL_EXPECT_APPARMOR_PROFILE: safeshell-bwrap//&safeshell-child
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -39,6 +39,7 @@ jobs:
         run: |
           sudo apparmor_parser --replace .github/apparmor/safeshell-bwrap
           sysctl kernel.apparmor_restrict_unprivileged_userns
+          test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = 1
       - run: python -m pip install pytest build 'setuptools>=77'
       - run: python tools/validate_linux.py
       - name: Record namespace policy diagnostics
