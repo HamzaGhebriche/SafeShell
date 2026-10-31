@@ -13,6 +13,8 @@ include <tunables/global>
 profile safeshell-bwrap /usr/bin/bwrap flags=(attach_disconnected) {
   /** mrwkl,
   network netlink raw,
+  # libc if_nametoindex uses this socket for bwrap's loopback lookup.
+  network unix dgram,
   signal,
   ptrace (read, readby) peer=safeshell-bwrap,
   mount,
