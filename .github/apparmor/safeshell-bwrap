@@ -7,10 +7,14 @@ include <tunables/global>
 # Enforce mode is intentional: the hosted kernel retained the default_allow
 # setup domain across exec. These explicit permissions replace implicit allow
 # all with the operations bwrap needs; child programs cannot retain this domain.
-profile safeshell-bwrap /usr/bin/bwrap {
+# Only the trusted namespace assembler needs disconnected-path lookup while it
+# replaces its mount namespace. Guest code transitions to a separate profile
+# without this flag. File access in this setup domain is already path-wide.
+profile safeshell-bwrap /usr/bin/bwrap flags=(attach_disconnected) {
   /** mrwkl,
   network netlink raw,
   signal,
+  ptrace (read, readby) peer=safeshell-bwrap,
   mount,
   umount,
   pivot_root,
@@ -22,7 +26,7 @@ profile safeshell-bwrap /usr/bin/bwrap {
 profile safeshell-child {
   /** mrwkl,
   signal,
-  ptrace (read) peer=safeshell-child,
+  ptrace (read, readby) peer=safeshell-child,
   audit deny capability,
   deny userns,
   /** ix,

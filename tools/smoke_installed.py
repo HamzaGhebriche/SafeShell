@@ -22,7 +22,7 @@ def main():
         "workflows": {},
     }
     with tempfile.TemporaryDirectory(prefix="safeshell-installed-") as directory:
-        root = Path(directory)
+        root = Path(directory).resolve(strict=True)
         install, project, home = root / "venv", root / "project", root / "home"
         project.mkdir()
         home.mkdir()
@@ -62,7 +62,7 @@ def main():
         package_info = json.loads(package_details)
         package = package_info["file"]
         assert package_info["version"] == package_info["metadata"] == "0.1.0a1"
-        assert Path(package).is_relative_to(install), (
+        assert Path(package).resolve(strict=True).is_relative_to(install), (
             "Source checkout shadowed the installed package"
         )
 
