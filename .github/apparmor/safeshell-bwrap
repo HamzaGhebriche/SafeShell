@@ -1,4 +1,4 @@
-# CI host setup only. Do not disable AppArmor's global user-namespace restriction.
+# Disposable CI/VM test-host setup. Keep the global user-namespace restriction.
 # Parent permissions authorize trusted bwrap to assemble its namespaces; the
 # stacked exec profile removes capabilities/user namespaces from guest programs.
 abi <abi/4.0>,

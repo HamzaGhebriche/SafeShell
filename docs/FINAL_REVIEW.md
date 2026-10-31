@@ -2,7 +2,8 @@
 
 Recommendation: **proceed with controlled private experimental-alpha testing**. Native Ubuntu
 CI and all portable jobs actually passed on the recorded candidate commit; see VALIDATION.md.
-No publication is authorized here. Production use remains outside this recommendation.
+Public experimental prerelease was subsequently authorized; see PUBLIC_REVIEW.md.
+Production use remains outside this recommendation.
 This is a source/diff and artifact review, not an independent security audit.
 
 ## Review scope and findings
@@ -33,7 +34,7 @@ This bounded review is not a proof that all bugs or security bypasses have been 
 
 ## Packaging and documentation checks
 
-The unpublished version remains 0.1.0a1 with Alpha classifier and MIT license. Source and
+The alpha package version remains 0.1.0a1 with Alpha classifier and MIT license. Source and
 installed metadata must agree. Wheel tests run in an unrelated cwd/fresh venv without system
 site packages. The source distribution must include runtime code, tests/gate, validation tools,
 CI and review/demo docs. Final checksums identify the reviewed bytes; source-to-wheel payload

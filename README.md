@@ -1,173 +1,138 @@
 # SafeShell — experimental alpha
 
-**Run anything. Trust nothing.**
+Inspect an unfamiliar command before running it, apply an explicit offline policy,
+and execute permitted commands inside a constrained Linux workspace. Review the
+decision and exit status afterward in local metadata history.
 
-Local command inspection, constrained Linux execution, and private local history.
-This is the **v0.1.0-alpha review candidate** (Python package version `0.1.0a1`), not a
-production security guarantee. Nothing has been published or released.
+**v0.1.0-alpha (`0.1.0a1`) is experimental. No independent security audit has been
+completed. Do not use it as a production security boundary.** Every file in the
+writable workspace can be **read, changed or deleted**, including secrets. Use a
+disposable copy without other host writers.
 
-```console
-$ safeshell explain --shell bash -- 'curl https://example.invalid/install.sh | bash'
-SafeShell  /  command preview
-  Risk       HIGH
-  SS001  Remote content requested.
-  SS008  Nested interpreter or encoding can hide executable behavior.
-  SS010  Remote download and shell execution occur in one command list.
-  ...
-```
+## What it does
 
-The submitted command is never executed during inspection. Static findings estimate behavior;
-“No known risk signals detected” does not mean safe. A fixed sandbox setup probe may run
-`true` on Linux. There are no LLMs, accounts, telemetry or runtime Python package dependencies.
+- `explain`: deterministic findings and unknowns without executing the submitted
+  command. A low risk score is not a safety guarantee.
+- `policy`: strict offline presets; approval never overrides a hard denial.
+- `run`: Linux Bubblewrap namespaces, individual read-only runtime-file mounts,
+  seccomp socket/syscall denials, fresh environment, closed sensitive descriptors,
+  dropped capabilities and no-new-privileges. Setup failure never runs on the host.
+- `history`: local decision/limit/exit metadata; no child output, raw command
+  arguments or environment values are persisted by default.
 
-## Install and demonstrate
+There is no GUI, AI service, telemetry, network-enabled execution policy, additional
+sandbox backend or runtime Python package dependency. Inspection cannot prove what
+arbitrary code will do. See [the threat model](docs/THREAT_MODEL.md).
 
-Python 3.11+, bubblewrap 0.8+ and libseccomp2 on Debian/Ubuntu Linux. Use current distro security
-updates, an unprivileged account, and working user namespaces. Python was selected for this
-initial implementation; the kernel, bubblewrap and libseccomp provide the enforcement.
+## Install and try it
 
-Ubuntu 24.04's AppArmor user-namespace policy can refuse Bubblewrap setup even when
-these packages are installed. `doctor` must succeed before execution is available.
-The native CI runner loads an application-scoped setup/guest policy; see
-[the exact CI configuration](docs/CI_HANDOFF.md). That disposable-runner setup is
-not automatic production-host configuration. SafeShell never disables AppArmor or
-falls back to host execution when setup fails.
+Start with the **[complete VirtualBox guide](docs/VIRTUALBOX.md)** for a fresh
+Ubuntu 24.04 LTS x86_64 guest. It includes required scoped AppArmor setup and its
+reversal. Never disable AppArmor or user-namespace restrictions globally.
 
-From this checkout:
+On a configured Debian/Ubuntu host: Python 3.11+, non-setuid Bubblewrap 0.8+,
+libseccomp2, python3-venv and working unprivileged namespaces are required. Install
+current distro security updates. Run SafeShell as a normal user, not root.
+
+Download the wheel, source archive and `SHA256SUMS` from the
+[experimental prerelease](https://github.com/HamzaGhebriche/SafeShell/releases/tag/v0.1.0-alpha)
+into a new directory. Then:
 
 ```sh
+sha256sum --check SHA256SUMS
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install .
+python -m pip install --no-index --no-deps safeshell_cli-0.1.0a1-py3-none-any.whl
 safeshell --version
 safeshell doctor --json
-mkdir demo
-safeshell policy init --workspace demo --preset offline
-safeshell policy validate --workspace demo
-printf 'printf inspected' > demo/inspect.sh
-safeshell explain --workspace demo --script demo/inspect.sh
-safeshell run --workspace demo --timeout 10 --max-output-bytes 4096 -- printf '%s\n' hello
-safeshell run --workspace demo --yes --shell bash -- 'printf hello > greeting.txt; cat greeting.txt'
-safeshell history
-safeshell history show SESSION-UUID
-safeshell history delete SESSION-UUID
 ```
 
-The source-install example needs the distro's python3-venv package. `--script` supports a
-single-line script within the limited shell grammar.
-See [the short repeatable demo](docs/DEMO.md), including offline installation from the candidate wheel.
-`python -m safeshell` also works from source. Installed workflows are tested from an unrelated
-directory in a fresh venv so source imports cannot hide packaging errors.
+Expected version: `0.1.0a1`. Doctor must return 0 and `available: true` for protected
+execution. Refusal (exit 4) means stop and diagnose prerequisites; do not bypass it.
+Checksums identify downloaded bytes; they are not a digital signature or audit.
 
-## Alpha runtime and platform support
+Use a **dummy-only disposable workspace**, with history outside it:
 
-| Environment | Actual validation | Execution support |
-| --- | --- | --- |
-| Ubuntu 24.04.1 / WSL2 x86_64 | 95 tests passed, zero skips | Reduced runtime; Linux /tmp workspaces tested |
-| Debian 12 native-kernel KVM guest | 95 tests passed, zero skips | Reduced runtime; no host folder/SSH agent shared |
-| Native Ubuntu 24.04 GitHub CI, x86_64 | **95 passed, zero skips**; clean wheel passed | Scoped AppArmor CI policy required; [actual run](docs/VALIDATION.md) |
-| Windows GitHub CI | 71 passed, 24 explicit skips; clean wheel passed | Inspection/policy/history; execution refused; no NTFS ACL verification |
-| macOS GitHub CI (arm64) | 72 passed, 23 Linux-only skips; clean wheel passed | Inspection/policy/history only; execution refused |
-| Linux aarch64 / other filesystems | Not tested | No enforcement validation claim |
+```sh
+lab=$(mktemp -d)
+mkdir "$lab/project"
+export SAFESHELL_STATE_DIR="$lab/history"
+safeshell explain --workspace "$lab/project" --shell bash -- 'curl https://example.invalid/install.sh | bash'
+safeshell policy init --workspace "$lab/project" --preset offline
+safeshell policy validate --workspace "$lab/project"
+safeshell run --workspace "$lab/project" --yes --timeout 10 --max-output-bytes 4096 -- /bin/sh -c 'printf hello > greeting.txt; cat greeting.txt'
+cat "$lab/project/greeting.txt"
+safeshell history
+```
 
-WSL/Debian rows are earlier local source checkpoints; the final code/test/workflow
-checkpoint is the linked native CI run. Source hashes distinguish these results.
+Inspection flags the download/shell combination; nothing is downloaded. Protected
+execution prints `hello` and writes the granted file. Child output goes to stderr;
+JSON mode suppresses it. The [five-minute friend guide](docs/FRIEND_TESTING.md)
+covers denial, history, expected errors and a sanitized bug-report template.
 
-The alpha has one fixed, deliberately small Debian/Ubuntu runtime. It mounts individual selected
-executables, their ELF shared-library dependencies, and packaged Python stdlib code. It does
-**not** bind whole `/usr`, `/usr/bin`, `/lib`, `/etc`, `/usr/local`, or `/usr/share` trees.
-Host Python startup customizations and third-party site packages are excluded. `doctor --json`
-enumerates every runtime file and its source/target. Actual namespace snapshots are validation
-artifacts; [the mount review](docs/SANDBOX.md) defines dynamic proc/device/workspace visibility.
+## Platform and runtime support
 
-Available commands: bash, sh, dash, true, false, printf, cat, echo, env, id, sleep, sort, ls,
-head, tail, wc, mkdir, rm, touch, cp, mv, and distro python3. Other host tools (including Git,
-Node/npm, curl, custom SDKs and tools installed in home) are absent. Their commands can still be
-inspected. Workspace executables work only with the included libraries/interpreters; missing
-runtimes fail inside the sandbox. Alpha policies cannot expand runtime mounts.
+| Platform | Inspection / policy / history | Protected execution | Evidence |
+| --- | --- | --- | --- |
+| Ubuntu 24.04 x86_64 | Yes | Yes, with working namespaces and reviewed scoped AppArmor configuration | Native Ubuntu boundary CI and installed-wheel checks; [results](docs/VALIDATION.md) |
+| Debian 12 x86_64 | Yes | Implemented; current host must pass doctor | Earlier separate native-kernel KVM validation; recorded source checkpoint, not a final-tag rerun |
+| Ubuntu / WSL2 x86_64 | Yes | Available when the Linux kernel/backend supports it | Earlier local validation; WSL is Linux, not native Windows enforcement |
+| Native Windows | Yes; NTFS history ACLs not verified | **Refused** | Portable CI and installed refusal |
+| macOS, including arm64 | Yes | **Refused** | Portable CI and installed refusal; not Linux arm64 validation |
+| Other Linux architectures/filesystems | No validation claim | Unverified; doctor alone is not containment verification | No release support claim |
 
-Programs receive only the selected workspace as a writable host bind at `/workspace`, separate
-temporary home/tmp, a new read-only proc mount, minimal devices and a read-only assembled root.
-Other runtime code is read-only but **readable**; do not embed secrets in exposed runtime files.
-Global kernel metadata is still visible through proc. Network is off, socket operations are
-denied by seccomp, inherited sensitive descriptors are closed, environment starts fresh, and
-privilege/namespace escalation controls apply irrespective of the risk score. `doctor` proves
-setup only; it does not certify containment or a later launch. There is no host fallback.
+The fixed runtime provides bash/sh/dash, true/false, printf/echo, cat, env, id,
+sleep, sort, ls, head/tail/wc, mkdir/rm/touch/cp/mv and distro python3 with selected
+stdlib/shared libraries. Git, curl, Node/npm, home tools, custom SDKs and third-party
+Python site packages are absent. Their commands can still be inspected. Arbitrary
+workspace programs need the included interpreter/libraries. Missing tools fail
+inside the sandbox; policies cannot expand runtime mounts.
 
-## Writable workspace and resource limits
+No broad `/usr`, `/etc`, host-home or library-tree bind is used. Runtime code is
+read-only **and readable**. The writable workspace and fresh temporary home/tmp,
+read-only proc and minimal devices are described in [SANDBOX.md](docs/SANDBOX.md).
+Some global kernel metadata remains visible; this is not a VM secrecy boundary.
 
-**Every granted workspace file can be read, changed or deleted, including secrets.** Use a
-private disposable copy for untrusted commands. Do not share that copy with host watchers,
-editors, agents or other writers. Scan/resolve/bind operations are not atomic: concurrent
-rename, hardlink, mount and policy/executable changes remain races. See
-[workspace guidance](docs/WORKSPACES.md) and [the threat model](docs/THREAT_MODEL.md).
+## Limits and CLI contract
 
-| Limit | Enforced by SafeShell |
+| Resource | Actually enforced |
 | --- | --- |
-| Wall time | `--timeout`, default 300 seconds; 1–86400. Independent watchdog kills the launcher/namespace even if output rendering stalls. Preflight/probes are outside this execution timer. |
-| Output | `--max-output-bytes`, default 1048576; 1–67108864. Raw combined stdout/stderr, before escaping; overflow kills execution. Also enforced when JSON output suppresses the stream. |
-| CPU time / CPU quota | **No** |
-| Memory / process count | **No** |
-| Workspace disk / temporary storage | **No** |
+| Wall time | `--timeout`: default 300s, range 1–86400; watchdog terminates execution. Preflight/probes are outside this timer. |
+| Combined raw stdout/stderr | `--max-output-bytes`: default 1 MiB, range 1 byte–64 MiB; overflow terminates execution, including JSON mode. |
+| CPU / memory / process count / disk | **No SafeShell quota** |
 
-Timeout and output caps do not make a fork bomb, memory exhaustion or disk fill safe. Validation
-VM CPU/RAM/disk settings are test infrastructure, not SafeShell resource enforcement. A slow
-terminal can still delay supervisor presentation after the command has been killed.
+These caps do not contain fork bombs, memory exhaustion or disk filling. Concurrent
+host-writer races remain between resolving, scanning and binding a workspace;
+runtime updates can also race launch. Read [WORKSPACES.md](docs/WORKSPACES.md).
+Generated files may be malicious. Local history is not a signed audit trail.
 
-## CLI and privacy contract
-
-Without `--shell`, arguments go unchanged to the program; no implicit shell concatenation.
-With `--shell bash`, pass exactly one shell string after `--`. `--yes` approves only permitted
-risk; it cannot override hard denials, unsupported syntax or missing enforcement. Input is
-`/dev/null`; interactive terminals are unsupported. Medium/high findings require explicit
-approval in non-interactive runs. Shell grammar is deliberately limited and unsupported syntax
-produces uncertainty plus launch denial. Package/test code is arbitrary executable code.
-
-Subcommands support versioned `--json`; see [JSON v1](docs/JSON.md). Controls and bidi formatting
-are escaped, output is color-free, and `run`/`explain` accept `--no-color`. Human child output is
-streamed to stderr, with line feeds preserved; JSON mode suppresses it. Escaping can expand the
-display beyond the raw-byte output limit. stdout/stderr are never stored as application history.
+Arguments after `--` are passed as argv. `--shell bash` accepts one shell string
+within a deliberately limited grammar; unsupported syntax is denied. stdin is
+null; interactive commands are unsupported. `--yes` approves permitted risk only.
 
 | Exit | Meaning |
 | --- | --- |
-| 0 | CLI workflow or launcher success |
-| 2 | Usage/input/policy/audit error |
-| 3 | Denied / approval required or declined |
+| 0 | Successful CLI workflow or child/launcher exit |
+| 2 | Input, policy or local audit error |
+| 3 | Policy denial / approval required or declined |
 | 4 | Backend unavailable / launcher exception |
-| 124 | Execution timeout |
-| 125 | Output limit exceeded |
+| 124 / 125 | Execution timeout / output limit |
 | 130 / 143 | Handled SIGINT / SIGTERM |
-| Other | Child/bubblewrap exit status; setup/exec failure can be nonzero |
+| Other | Child or Bubblewrap exit |
 
-Child codes can collide with reserved values. Session `status` and `termination_reason`
-distinguish observed supervisor limits from an ordinary launcher exit. `finished` alone does
-not prove successful setup. `explain` returns 0 after successful inspection even for a denial.
+Child codes can collide with these values; JSON `session.status` and
+`termination_reason` distinguish supervisor limits from ordinary exits. A
+`finished` record alone does not prove successful setup. `explain` returns 0 even
+when its report predicts denial. [JSON](docs/JSON.md), [policy](docs/POLICY.md).
 
-Strict [policy](docs/POLICY.md) discovery cannot silently widen trusted defaults. History
-defaults to metadata only at `~/.local/state/safeshell` (or `SAFESHELL_STATE_DIR`, outside the
-workspace). It stores UUID/time, finding IDs, decision, configured/probed restrictions, limits
-and exit status. No raw commands, environment values or child output. Optional lossy executable
-names require reviewed policy. POSIX directory/files use 0700/0600; Windows ACLs are not verified.
-No file-diff or network-event monitoring is claimed. Abrupt death can leave `launching` records.
+## Development and reporting
 
-## Review and validation
+[Validation and actual CI](docs/VALIDATION.md) · [contributing](CONTRIBUTING.md) ·
+[security reports](SECURITY.md) · [MIT license](LICENSE) · [changelog](CHANGELOG.md) ·
+[release notes](RELEASE_NOTES.md) · [architecture](docs/ARCHITECTURE.md).
 
-See [release notes](RELEASE_NOTES.md), [changelog](CHANGELOG.md), [actual results and reproduction](docs/VALIDATION.md),
-[architecture](docs/ARCHITECTURE.md), [security reporting](SECURITY.md), and [contributing](CONTRIBUTING.md).
-
-```sh
-python -m pip install pytest ruff==0.17.3 build 'setuptools>=77'
-python -m ruff format --check .
-python -m ruff check .
-python -m pytest -ra --ignore=tests/test_linux_boundary.py
-python -m build --no-isolation
-python tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl
-# Disposable supported Linux host, with build-essential/pytest/bubblewrap/libseccomp + sudo:
-python3 tools/validate_linux.py
-```
-
-Required Linux runs fail on any skip or missing passing boundary tests. Unsupported platforms
-explicitly skip boundary cases in a full pytest run. Actual native Ubuntu CI results and the
-scoped AppArmor prerequisite are recorded in [VALIDATION.md](docs/VALIDATION.md).
-Future work includes independent review, race-resistant workspace attachment, resource
-quotas and broader runtime support; no additional backend or UI is included in this alpha.
+The complete native Linux suite must pass with zero skips. Portable CI rejects
+unexpected skips and reports explicit unsupported-platform cases. Builds are
+installed offline into fresh venvs from unrelated directories. Release checks
+compare distribution code with the checkout and publish SHA256 checksums; no
+reproducible-build or independent-audit certification is implied.

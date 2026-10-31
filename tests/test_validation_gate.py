@@ -59,6 +59,25 @@ def test_required_mode_rejects_missing_boundary_tests(tmp_path):
     assert result.returncode == 1, (result.stdout, result.stderr)
 
 
+@pytest.mark.parametrize("terminal", [True, False])
+def test_portable_ci_rejects_unexpected_skips(tmp_path, terminal):
+    shutil.copyfile(Path(__file__).with_name("conftest.py"), tmp_path / "conftest.py")
+    (tmp_path / "test_gate.py").write_text(
+        "import pytest\ndef test_unexpected(): pytest.skip('unexpected fixture failure')\n"
+    )
+    args = [sys.executable, "-m", "pytest", "--confcutdir", str(tmp_path), str(tmp_path)]
+    if not terminal:
+        args += ["-p", "no:terminal"]
+    result = subprocess.run(
+        args,
+        env=dict(os.environ, SAFESHELL_REQUIRE_BACKEND="0", SAFESHELL_PORTABLE_CI="1"),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1, (result.stdout, result.stderr)
+
+
 def test_validation_evidence_cannot_silently_reuse_stale_results(tmp_path):
     from tools.debian_vm import prepare_results
     from tools.validate_linux import clear_current_evidence

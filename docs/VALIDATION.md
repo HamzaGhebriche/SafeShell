@@ -1,9 +1,12 @@
 # Alpha candidate validation — final review 2026-10-31
 
-**GO for controlled private experimental-alpha testing; no publication authorized.**
-The dedicated repository is [HamzaGhebriche/SafeShell](https://github.com/HamzaGhebriche/SafeShell),
-verified private with the expected owner. Ordinary commits/pushes were authorized and performed;
-the unrelated ancestor repository was untouched. No tag, release or package was published.
+**Experimental alpha; public GitHub prerelease authorized. No production-readiness claim.**
+The target is [HamzaGhebriche/SafeShell](https://github.com/HamzaGhebriche/SafeShell).
+Owner/remote are verified. Normal history is preserved; no registry publication is performed.
+See [PUBLIC_REVIEW.md](PUBLIC_REVIEW.md), [VirtualBox](VIRTUALBOX.md) and
+[friend testing](FRIEND_TESTING.md). The final release body identifies the tagged commit,
+successful final workflow and asset checksums. Earlier results below are tied to their
+recorded source checkpoints and must not be relabeled as final-tag reruns.
 
 ## Actual remote GitHub CI — 2026-10-31
 
@@ -129,13 +132,11 @@ by other users, including parent directories. They are not an immutable runtime 
 
 ## Reproduce
 
-This root-default WSL installation, from PowerShell in the checkout:
-
-```powershell
-wsl -d Ubuntu -- /bin/sh -c 'apt-get update && apt-get install -y bubblewrap libseccomp2 python3-pytest python3-venv build-essential'
-wsl -d Ubuntu --cd /mnt/c/Users/kali/SafeShell -- python3 tools/validate_linux.py --as-user nobody
-wsl -d Ubuntu --cd /mnt/c/Users/kali/SafeShell -- runuser -u nobody -- python3 tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl --require-backend
-```
+For root-default WSL, first change into your checkout within the Linux distro,
+install the listed distro dependencies, then run `python3 tools/validate_linux.py
+--as-user nobody` from the root harness. All actual probes/tests run unprivileged.
+For new testing, prefer the complete normal-user VirtualBox guide instead of
+assuming another developer's Windows checkout path or WSL configuration.
 
 Nonroot disposable Linux host with passwordless sudo:
 

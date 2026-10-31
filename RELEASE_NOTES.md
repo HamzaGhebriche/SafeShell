@@ -1,44 +1,50 @@
-# v0.1.0-alpha review candidate
+# v0.1.0-alpha — experimental prerelease
 
-**Experimental alpha. Not published. Not a production security boundary certification.**
-The distribution version is `0.1.0a1`; this is the first review candidate for the human-facing
-v0.1.0-alpha label. The user authorized normal commits/pushes to the dedicated private SafeShell repository.
-No tag, hosted release or package upload was created; visibility remains private.
+Python distribution version: **0.1.0a1**. Intended Git tag: **v0.1.0-alpha**.
+This is an experimental CLI alpha, **not production-ready** and not independently
+security-audited. GitHub prerelease assets are the wheel, built source archive and
+SHA256SUMS; no package registry publication is performed.
 
-The candidate covers three workflows: inspect commands without executing them; execute within
-a fail-closed Linux bubblewrap/seccomp configuration; review local metadata-only history.
+SafeShell inspects commands without executing the submitted command, applies
+strict offline policies, runs permitted commands inside a fail-closed Linux
+Bubblewrap/seccomp configuration, and stores local decision/exit metadata.
+Risk predictions do not change kernel restrictions. Approval cannot override
+hard denials or missing enforcement. No GUI, AI features or extra backend exists.
 
-The runtime is intentionally narrower than the development implementation. It no longer exposes
-whole host `/usr`, library, alternatives or share trees. Supported tools are the fixed shell/
-core-tool/Python set listed in README; Git, npm/Node, curl, home tools and arbitrary SDKs are not
-available for execution. Missing resources fail inside the sandbox. Inspection remains usable
-for commands requiring unavailable tools. Existing scripts relying on broad host runtime access
-must be adapted; there is no mount-expansion flag in this alpha.
+## Try this release
 
-Runtime code is still readable. Host home stores and unrelated system paths are absent, but
-mounted workspace secrets remain accessible and writable files can be destroyed. Use a private
-disposable workspace copy with no concurrent host writers. Preflight checks are not atomic.
+Follow [the complete fresh Ubuntu VirtualBox guide](docs/VIRTUALBOX.md), then
+[the five-minute friend walkthrough](docs/FRIEND_TESTING.md). Install the verified
+wheel in a fresh venv; version must be 0.1.0a1 and doctor must succeed before
+protected execution. Ubuntu 24.04 needs the documented scoped AppArmor test-host
+policy on the validated configuration; global restrictions stay enabled.
+Native Windows/macOS provide inspection/policy/history and refuse execution.
 
-Execution defaults to 300 wall-clock seconds and 1 MiB combined raw stdout/stderr. The CLI can
-set 1–86400 seconds and 1 byte–64 MiB. Limit exits are 124/125; JSON session termination reasons
-distinguish those from ordinary child exit codes. No CPU, memory, process-count or disk quotas
-are enforced. Do not treat this as complete resource containment.
+## Important limitations
 
-Validation: native Ubuntu GitHub CI passed all 95 tests with zero skips and clean-wheel
-workflows on commit `eb621ed941f36e8d869897e2ca41d20121151776`. All three portable jobs
-passed, including Windows/macOS refusal. Ubuntu CI loads a scoped AppArmor policy while
-retaining the global user-namespace restriction; stock Ubuntu setup may refuse execution.
-Earlier local WSL and separate Debian native-kernel KVM runs each passed 95/0; those are
-historical source checkpoints, not reruns of the final CI commit. See [actual evidence](docs/VALIDATION.md),
-[filesystem inventory](docs/SANDBOX.md), and [the demonstration](docs/DEMO.md).
+- **Workspace files can be read, changed or deleted**, including mounted secrets.
+  Use private disposable copies without concurrent host writers. Generated outputs
+  can be malicious. Checking/scanning/binding is not atomic.
+- Runtime code and some kernel/proc metadata remain readable. There is no whole
+  host root bind, but this is not a VM secrecy boundary or immutable runtime image.
+- Wall-time and combined-output caps exist (defaults 300s / 1 MiB). **No CPU,
+  memory, process-count or disk quotas** are enforced. Resource exhaustion remains possible.
+- Fixed shell/core/Python runtime only; no Git, curl, npm/Node or arbitrary SDKs.
+  Interactive input, network-enabled policies and unsupported shell grammar are refused.
+- Host kernel/runtime trust, same-UID host races and unsigned local history remain.
+  Linux arm64/other filesystems/alternate ABIs and Windows history ACLs are unverified.
+- There is **no independent security audit** or claim that all vulnerabilities are found.
 
-Review artifacts are the alpha wheel/source archive under `dist/`, their SHA256SUMS, current
-validation summaries, runtime/namespace snapshots and clean-install workflow reports.
-Local artifacts identify earlier local checkpoints; the remote CI wheel hash and evidence
-are separately recorded in `docs/validation-remote-ci.json`. Hashes identify reviewed bytes,
-not reproducible-build certification.
+## Validation and public review
 
-Before any publication: require successful CI on the intended final source, review the runtime/ELF
-resolver and resource-lifecycle changes, inspect artifacts, and acknowledge documented races,
-kernel trust, filesystem/platform scope and resource gaps. Independent review remains desirable;
-no independent security audit has been completed.
+[VALIDATION.md](docs/VALIDATION.md) records actual native Ubuntu and portable CI,
+separate from earlier local WSL/Debian checkpoints. The final prerelease body
+records the tagged SHA, successful final CI URL and exact uploaded asset hashes.
+The [public-readiness review](docs/PUBLIC_REVIEW.md) covers reachable history,
+temporary-helper exclusion and remaining verification limits.
+
+Release preparation also tightens portable unexpected-skip rejection, checks
+distribution/source equality and required guide contents, tests the installed
+dummy boundary/cleanup walkthrough, and includes issue/security reporting guidance.
+Prior CI fixes retained NNP, minimal mounts, network separation, seccomp and
+fail-closed behavior. No security check was removed to obtain a green run.

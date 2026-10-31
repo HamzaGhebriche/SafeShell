@@ -1,95 +1,77 @@
-# Private repository and native CI handoff
+# CI configuration and release provenance
 
-The user authorized normal commits/pushes on 2026-10-31. GitHub and Git credentials
-independently matched **HamzaGhebriche** (account ID 146950748). The dedicated
-[HamzaGhebriche/SafeShell](https://github.com/HamzaGhebriche/SafeShell) repository
-was created **private** (repository ID 1440555247). Owner, private visibility and
-push permission were verified before pushing; visibility was not changed.
+The verified project is [HamzaGhebriche/SafeShell](https://github.com/HamzaGhebriche/SafeShell),
+with origin `https://github.com/HamzaGhebriche/SafeShell.git`. It has a dedicated
+Git root. The unrelated ancestor repository was never pushed. The repository was
+initially private; public visibility and an experimental GitHub prerelease were
+subsequently explicitly authorized. Normal commits/pushes preserve history.
 
-This checkout has its own Git root, origin
-`https://github.com/HamzaGhebriche/SafeShell.git`, and branch
-`codex/safeshell-alpha-review`. The unrelated ancestor repository was untouched.
-Ordinary commits/fast-forward pushes preserve history. No force push, tag, hosted
-release or package publication occurred. Tracked/staged text was reviewed for
-credentials, history, temporary files and build artifacts. Distributions, raw
-validation directories, local history and authentication helpers were excluded.
+## Enforcement and portable jobs
 
-See [actual validation results](VALIDATION.md) for commit/run links and outcomes.
-Earlier local WSL/Debian/Windows receipts are separate from remote GitHub CI.
+`.github/workflows/ci.yml` uses read-only contents permission and a 15-minute native
+Ubuntu 24.04 job. It installs signed distro backend/compiler/venv/AppArmor packages,
+loads the scoped profile, and asserts the global userns restriction is still 1.
+`SAFESHELL_REQUIRE_BACKEND=1` requires the complete `tests/` directory with **zero
+skips** and passing boundary cases. No continue-on-error, mocked backend, container
+substitution or host fallback is accepted. Evidence is uploaded even on failure.
 
-## Required native job and portable matrix
+Ubuntu's generic AppArmor profile initially denied Bubblewrap loopback setup.
+The scoped test-host profile permits trusted namespace assembly and stacks an
+enforced capability/userns-denying guest profile on exec. Both profiles must
+permit an operation. Replacement transitions correctly failed under NNP; stacking
+retains it. The validator requires the exact observed label
+`safeshell-bwrap//&safeshell-child (enforce)`. AppArmor permits reachable files;
+explicit minimal Bubblewrap mounts remain the filesystem boundary. Disconnected
+FD metadata uses a synthetic child prefix. No global security control is disabled.
 
-`.github/workflows/ci.yml` selects `ubuntu-24.04`, read-only contents permission,
-a 15-minute timeout and `SAFESHELL_REQUIRE_BACKEND=1`. It installs distro backend,
-compiler, venv and AppArmor prerequisites, loads the scoped policy below, runs
-`tools/validate_linux.py`, builds wheel/sdist and runs fresh-venv installed
-workflows with `--require-backend`. It uploads `linux-enforcement-evidence` even
-after failure. There is no continue-on-error, mocked backend, host fallback or
-skip acceptance in this job.
+The portable Ubuntu/Windows/macOS matrix runs lint, format, tests, builds and fresh
+offline wheel workflows; fail-fast is disabled. `SAFESHELL_PORTABLE_CI=1` rejects
+unexpected skips. Only documented Windows/macOS unavailable-backend boundary
+cases and Windows FIFO/hardlink fixture limitations are accepted. Linux portable
+tests omit the boundary file because the required native job covers all tests.
 
-The validator discovers **all of `tests/`**. Required-mode pytest fails on any skip
-or no passing boundary cases; subprocess regressions test that gate with/without
-terminal output. Inventory capture requires exact planned/observed file equality.
-The installed-wheel verifier checks metadata/source-import exclusion, explain,
-script, policy init/validate, hard denial, doctor, real execution, history and
-timeout/output-limit exit codes. The portable Ubuntu/Windows/macOS matrix runs
-lint, formatting, tests, builds and clean-wheel workflows. Matrix fail-fast is
-disabled. Linux portable tests omit the boundary file because the mandatory native
-job covers the complete directory. Unsupported-platform skips remain explicit.
+## Exact Linux reproduction
 
-## Ubuntu AppArmor prerequisite
-
-Stock Ubuntu's generic unprivileged-user-namespace profile denied the capability
-Bubblewrap needs to initialize loopback. The first real run failed closed. The
-job does **not** disable AppArmor, change a global sysctl, remove namespaces or
-seccomp, run tests as root, or substitute a container/WSL backend.
-
-On the disposable runner it loads
-[safeshell-bwrap](../.github/apparmor/safeshell-bwrap). The trusted `/usr/bin/bwrap`
-setup domain permits namespace/mount assembly, capabilities and loopback lookup.
-Exec **stacks** an enforced `safeshell-child` domain denying capabilities/user
-namespaces. Both profiles must allow an operation; guest execs retain the
-intersection. Stacking preserves no-new-privileges. The validator requires the
-exact label `safeshell-bwrap//&safeshell-child (enforce)`; the setup label alone is
-rejected. The workflow asserts `kernel.apparmor_restrict_unprivileged_userns=1`.
-
-AppArmor file rules permit reachable files; they are **not** the filesystem
-boundary. Explicit Bubblewrap mounts supply that boundary. Disconnected null
-stdin/output pipes require metadata lookup. The child uses a distinct synthetic
-disconnected-path prefix; tests still require inherited dummy secret-file/socket
-identities to be absent. Seccomp, namespaces, capability dropping,
-no-new-privileges and minimal mounts remain mandatory independently of this
-policy. This is ephemeral test-host configuration, not an independently audited
-production deployment policy. See [the kernel's no-new-privileges contract](https://docs.kernel.org/userspace-api/no_new_privs.html).
-
-## Exact reproduction
-
-As a nonroot sudo user on a **disposable Ubuntu 24.04 runner**:
+Use the normal-user steps in [VIRTUALBOX.md](VIRTUALBOX.md), including scoped
+AppArmor installation and reversal. Inside that configured disposable guest:
 
 ```sh
-sudo apt-get update
-sudo apt-get install -y bubblewrap libseccomp2 build-essential python3-venv apparmor
-sudo apparmor_parser --replace .github/apparmor/safeshell-bwrap
-test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = 1
-python3 -m venv .venv
-. .venv/bin/activate
 python -m pip install pytest ruff==0.17.3 build 'setuptools>=77'
 python -m ruff check .
 python -m ruff format --check .
+sudo -v
 SAFESHELL_REQUIRE_BACKEND=1 \
 SAFESHELL_EXPECT_APPARMOR_PROFILE='safeshell-bwrap//&safeshell-child' \
 python tools/validate_linux.py
 python -m build --no-isolation
 python tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl --require-backend
+python tools/prepare_release_assets.py dist
 ```
 
-Actual tests/probes are unprivileged; only dependencies/policy and temporary
-setuid/outside-dummy fixture provisioning use sudo. The validator removes its
-fixtures. Destroy the disposable runner afterward; do not blindly install this
-CI policy on a production host. An unconfigured host can legitimately refuse
-setup in `doctor`; execution must then remain unavailable.
+Only temporary fixture provisioning and host prerequisite/policy setup use sudo;
+probes and tests remain unprivileged. `doctor` is setup evidence, not a containment
+audit. An unavailable backend must refuse execution.
 
-Subsequent authorized fixes use ordinary `git commit` then
-`git push origin codex/safeshell-alpha-review`; the push trigger starts `checks`.
-Require the native and all three portable jobs on the intended SHA. Inspect JUnit
-failures/errors/skips and the installed-wheel receipt, not only a green badge.
+## Distribution and tag checks
+
+The native job builds wheel/sdist from its exact checkout. The installed verifier
+uses a fresh venv, no system packages, no-index/no-deps installation and unrelated
+cwd. It verifies version/source-import exclusion, explain/script, policy init and
+validate, hard denial, run/refusal, limits, history, dummy outside/home/symlink and
+socket/environment checks, and delayed-descendant cleanup.
+
+`prepare_release_assets.py` compares wheel/package and sdist source bytes with the
+checkout, checks required guides/profile, rejects private/generated archive paths,
+and writes SHA256SUMS. `alpha-distributions` uploads those exact three files;
+`linux-enforcement-evidence` uploads JUnit/host/inventory/installed receipts.
+
+Release procedure: require all four jobs on the final SHA, inspect artifacts and
+history, tag that SHA without rewriting history, build/verify the tag's artifact
+receipts, then attach the checked wheel, source archive and checksums to an
+**experimental prerelease**. The prerelease body identifies the final SHA, CI run
+and asset hashes. GitHub-generated source ZIP/tar links are not the built sdist.
+There is no PyPI publishing workflow. Checksums do not imply bit-for-bit
+reproducible builds, code signing, independent audit or production readiness.
+
+See [actual results](VALIDATION.md) and [public-readiness review](PUBLIC_REVIEW.md).
+Earlier local and private-CI checkpoint evidence is retained and labeled separately.

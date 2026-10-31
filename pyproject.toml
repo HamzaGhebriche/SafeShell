@@ -6,10 +6,15 @@ build-backend = "setuptools.build_meta"
 name = "safeshell-cli"
 version = "0.1.0a1"
 description = "Local-first command inspection and fail-closed Linux execution"
+readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 dependencies = []
 classifiers = ["Development Status :: 3 - Alpha", "Environment :: Console", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3"]
+
+[project.urls]
+Repository = "https://github.com/HamzaGhebriche/SafeShell"
+Issues = "https://github.com/HamzaGhebriche/SafeShell/issues"
 
 [project.scripts]
 safeshell = "safeshell.cli:main"

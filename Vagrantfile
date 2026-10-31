@@ -1,4 +1,5 @@
-# Disposable Debian VM. The source is copied in, not mounted from the host.
+# Optional, unverified Vagrant provider. Copy source in explicitly after boot;
+# no source or host directory is automatically shared by this configuration.
 Vagrant.configure("2") do |config|
   config.vm.box = "debian/bookworm64"
   config.vm.synced_folder ".", "/vagrant", disabled: true

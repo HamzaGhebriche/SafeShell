@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import tempfile
+import time
 import venv
 from pathlib import Path
 
@@ -149,6 +150,60 @@ def main():
         session = result["session"]["id"]
         if available:
             assert (project / "hello.txt").read_text() == "hello from sandbox"
+            outside = root / "outside.txt"
+            outside.write_text("DUMMY-OUTSIDE")
+            (home / ".ssh").mkdir()
+            (home / ".ssh" / "id_ed25519").write_text("DUMMY-HOME-KEY")
+            (project / "escape-link").symlink_to(outside)
+            example = Path(__file__).resolve().parents[1] / "examples" / "boundary_demo.py"
+            (project / "boundary_demo.py").write_bytes(example.read_bytes())
+            environment["SAFESHELL_DUMMY_SECRET"] = "DUMMY-ENV"
+            invoke(
+                "guide-boundaries",
+                [
+                    "run",
+                    "--json",
+                    "--yes",
+                    "--timeout",
+                    "20",
+                    "--",
+                    "/usr/bin/python3",
+                    "boundary_demo.py",
+                    str(outside),
+                    str(home),
+                ],
+            )
+            boundary = json.loads((project / "boundary-results.json").read_text())
+            assert all(
+                boundary[key]
+                for key in (
+                    "outside_denied",
+                    "dummy_home_denied",
+                    "symlink_escape_denied",
+                    "socket_denied",
+                    "environment_excluded",
+                    "no_new_privileges",
+                )
+            )
+            cleanup = invoke(
+                "guide-timeout-cleanup",
+                [
+                    "run",
+                    "--json",
+                    "--yes",
+                    "--timeout",
+                    "5",
+                    "--",
+                    "/bin/sh",
+                    "-c",
+                    "echo ready > ready; (sleep 8; echo escaped > late) & wait",
+                ],
+                124,
+            )
+            assert cleanup["session"]["status"] == "timed-out"
+            assert (project / "ready").exists()
+            time.sleep(8.3)
+            assert not (project / "late").exists()
             limited = invoke(
                 "output-limit",
                 [

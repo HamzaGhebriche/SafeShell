@@ -4,6 +4,8 @@ permissions:
   contents: read
 jobs:
   portable:
+    env:
+      SAFESHELL_PORTABLE_CI: '1'
     strategy:
       fail-fast: false
       matrix:
@@ -49,6 +51,15 @@ jobs:
           sudo journalctl -k --no-pager -n 80
       - run: python -m build --no-isolation
       - run: python tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl --require-backend > validation-results/installed-smoke.json
+      - run: python tools/prepare_release_assets.py dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: alpha-distributions
+          path: |
+            dist/safeshell_cli-0.1.0a1-py3-none-any.whl
+            dist/safeshell_cli-0.1.0a1.tar.gz
+            dist/SHA256SUMS
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:

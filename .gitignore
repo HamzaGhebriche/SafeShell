@@ -15,3 +15,11 @@ dist/
 validation-results/
 .vagrant/
 .venv/
+.venv*/
+.test-public*/
+release-assets/
+# Local credentials and deployment helpers must never enter source/history.
+.env
+.env.*
+/github_ops.py
+/release_ops.py

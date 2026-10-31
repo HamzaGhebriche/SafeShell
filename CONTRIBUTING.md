@@ -21,3 +21,16 @@ policies to make tests pass. Do not add raw commands, environment values or chil
 Keep modules small and policy evaluation pure. Document new capabilities and unsupported cases.
 Changing risk rules must not change sandbox restrictions. Follow the security reporting guidance
 for discovered bypasses instead of adding live exploit data to ordinary issues.
+
+
+Use [VIRTUALBOX.md](docs/VIRTUALBOX.md) for exact Ubuntu scoped AppArmor setup and
+reversal. Never globally disable host controls. Native CI requires zero skips;
+portable CI uses SAFESHELL_PORTABLE_CI=1 to reject unexpected skips. Tests may
+explicitly skip only unavailable Windows/macOS boundary support and documented
+Windows fixture limitations. Add regression coverage for any gate changes.
+
+Before a GitHub prerelease, run `python tools/prepare_release_assets.py dist` after
+building and installed-wheel checks. Tag the tested commit and attach the CI-built
+wheel/sdist/SHA256SUMS; do not silently rebuild different bytes after checks or
+publish to a registry. Public issues use the bug/documentation templates; keep
+suspected boundary bypass details in the private reporting channel.

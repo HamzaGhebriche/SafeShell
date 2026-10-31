@@ -1,9 +1,11 @@
-# v0.1.0-alpha private review handoff
+# Historical private-checkpoint alpha review
 
-Reviewed 2026-10-31 (Europe/Paris). **GO for controlled private experimental-alpha
-testing.** Native Ubuntu CI and the portable matrix actually passed on the
-recorded candidate. No package publication, public release, visibility change or
-production-security certification is authorized. Package version: **0.1.0a1**.
+This document preserves the successful **earlier private checkpoint**. The user
+subsequently authorized public visibility and an experimental prerelease.
+Current public-readiness scope, final validation and guides are in
+[PUBLIC_REVIEW.md](PUBLIC_REVIEW.md), [VALIDATION.md](VALIDATION.md),
+[VIRTUALBOX.md](VIRTUALBOX.md) and [FRIEND_TESTING.md](FRIEND_TESTING.md).
+No production-security certification is claimed. Version: **0.1.0a1**.
 
 ## Verified remote evidence
 
@@ -82,6 +84,6 @@ quotas exist; wall-time/output limits are not complete resource containment.
 
 Kernel exploits, hostile host writers, other Linux architectures/filesystems and
 alternate ABIs have no verification claim. Windows/macOS execution and NTFS ACL
-verification remain unsupported. Later package/public-release decisions require
-separate authorization and review; successful CI is evidence for this bounded
+verification remain unsupported. Public experimental prerelease was subsequently authorized; successful CI remains
+evidence for this bounded
 alpha checkpoint, not proof that all vulnerabilities are absent.

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/HamzaGhebriche/SafeShell/security/advisories/new
+    about: Do not post working bypasses or secrets in public issues.

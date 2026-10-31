@@ -3,6 +3,6 @@ include Vagrantfile
 recursive-include tools *.py
 recursive-include tests *.py
 recursive-include docs *.md *.json
-recursive-include examples *.toml
-recursive-include .github *.yml
+recursive-include examples *.toml *.py
+recursive-include .github *.yml *.yaml *.md
 recursive-include .github/apparmor *

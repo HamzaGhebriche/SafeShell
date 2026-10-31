@@ -3,9 +3,11 @@
 SafeShell v0.1.0-alpha (package 0.1.0a1) is an experimental review candidate. No supported production release or independent audit
 is claimed. Keep the host kernel, bubblewrap, libseccomp and Python security-patched.
 
-Please report bypasses privately to the repository maintainers using the hosting platform's
-private vulnerability-reporting feature when available. Until a project contact is established,
-do not publish working exploits or secrets in a public issue. Include OS/kernel/backend versions,
+Report suspected bypasses through
+[GitHub private vulnerability reporting](https://github.com/HamzaGhebriche/SafeShell/security/advisories/new).
+If the private form is unavailable, open only a public request for a private reporting channel,
+without exploit details or secrets; no email address is advertised. Do not publish working
+exploits or secrets in public issues. Include OS/kernel/backend versions,
 `safeshell doctor --json`, a minimal reproduction with dummy files, expected/actual behavior,
 and whether another process could modify the workspace concurrently.
 
