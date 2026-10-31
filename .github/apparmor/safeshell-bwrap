@@ -11,6 +11,7 @@ include <tunables/global>
 # replaces its mount namespace. Guest code transitions to a separate profile
 # without this flag. File access in this setup domain is already path-wide.
 profile safeshell-bwrap /usr/bin/bwrap flags=(attach_disconnected) {
+  / r,
   /** mrwkl,
   network netlink raw,
   # libc if_nametoindex uses this socket for bwrap's loopback lookup.
@@ -26,6 +27,7 @@ profile safeshell-bwrap /usr/bin/bwrap flags=(attach_disconnected) {
 }
 
 profile safeshell-child {
+  / r,
   /** mrwkl,
   signal,
   ptrace (read, readby) peer=safeshell-child,
