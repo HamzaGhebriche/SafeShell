@@ -5,6 +5,19 @@ Intel/AMD x86_64 host. The guest command workflows are exercised by native Ubunt
 CI; the VirtualBox installation/UI sequence is a manual guide, not a claimed
 automated VirtualBox validation. Linux arm64 is not validated by this release.
 
+**WSL2 is a different environment.** Run `uname -r`: `microsoft` / `WSL2` in
+the kernel name indicates WSL, not this fresh VM. Start with the
+[README quick start](../README.md#numbered-quick-start-ubuntu-2404--wsl2-or-a-linux-guest)
+there. After installation/doctor, WSL users can reuse the common dummy tests in
+sections 4–6, but must skip the VM-only profile setup/assertion/reversal. A
+non-Microsoft kernel name alone does not identify a VirtualBox guest.
+
+Run each setup/walkthrough **in order, in the same Ubuntu Bash terminal**. Leave
+the venv active. If you reopen the terminal, reactivate it and reset `download_dir`
+and `src` as in [README](../README.md#if-you-reopen-the-terminal), then recreate
+`lab`, `work` and `SAFESHELL_STATE_DIR` using section 4. Old shell variables do not
+survive; use a fresh workspace/policy instead of initializing over an existing one.
+
 SafeShell is experimental, with no independent security audit. Use dummy data.
 **Everything inside the writable workspace can be read, changed or deleted.**
 Host-writer races remain, and CPU/memory/process-count/disk quotas are not enforced.
@@ -31,6 +44,9 @@ The VM is an additional disposable testing environment, not a SafeShell backend.
 
 All following commands run **inside the Linux guest**, as the normal user.
 Do not use `sudo safeshell` or run the test suite as root.
+Check `id -u` (must be nonzero). If starting as root, use the
+[existing-user switch / create-only-if-needed instructions](../README.md#1-identify-the-environment-and-use-a-regular-user)
+before continuing; account creation is not required for an existing normal login.
 
 ## 2. Download and install the exact release
 
@@ -38,8 +54,9 @@ Do not use `sudo safeshell` or run the test suite as root.
 sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install -y python3 python3-venv bubblewrap libseccomp2 apparmor curl ca-certificates
-mkdir -p "$HOME/safeshell-alpha-download"
-cd "$HOME/safeshell-alpha-download"
+download_dir="$HOME/safeshell-alpha-download"
+mkdir -p "$download_dir"
+cd "$download_dir"
 base=https://github.com/HamzaGhebriche/SafeShell/releases/download/v0.1.0-alpha
 for asset in safeshell_cli-0.1.0a1-py3-none-any.whl safeshell_cli-0.1.0a1.tar.gz SHA256SUMS; do
   curl --fail --location --output "$asset" "$base/$asset" || exit 1
@@ -52,6 +69,7 @@ python3 -m venv "$HOME/safeshell-alpha-venv"
 python -m pip install --no-index --no-deps "$PWD/safeshell_cli-0.1.0a1-py3-none-any.whl"
 safeshell --version
 uname -m
+uname -r
 id -u
 bwrap --version
 ```
@@ -66,7 +84,13 @@ Ubuntu's global user-namespace restriction can block Bubblewrap loopback setup.
 Keep it enabled. On this **fresh disposable guest**, load the reviewed scoped
 profile shipped in the verified source archive. Read it first:
 
+**This procedure is for the documented fresh Ubuntu VM, not a WSL workaround.**
+The reported WSL result `apparmor_profile: "kernel\u0000"` did not verify this
+enforced stack. Do not blindly load the profile or relax the stack assertion on
+WSL. No new VirtualBox installation/test is claimed by this documentation update.
+
 ```sh
+sudo apt-get install -y apparmor
 cat "$src/.github/apparmor/safeshell-bwrap"
 cat /sys/module/apparmor/parameters/enabled
 sysctl kernel.apparmor_restrict_unprivileged_userns
@@ -86,10 +110,15 @@ fi
 sudo install -m 0644 "$src/.github/apparmor/safeshell-bwrap" "$profile"
 sudo apparmor_parser --replace "$profile"
 test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = 1 || exit 1
-safeshell doctor --json > doctor.json
+safeshell doctor --json > "$download_dir/doctor.json"
 doctor_status=$?
-python -c 'import json; d=json.load(open("doctor.json")); print(d["available"], d["reason"]); assert d["available"]'
-test "$doctor_status" = 0 || exit 1
+python - "$download_dir/doctor.json" "$doctor_status" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+print("Availability:", d["available"])
+print("Reason:", d["reason"])
+print("Doctor exit code:", sys.argv[2])
+PY
 ```
 
 The trusted `/usr/bin/bwrap` domain permits namespace/mount construction and
@@ -104,6 +133,9 @@ an independent deployment-policy audit.
 
 Doctor tests fixed sandbox setup only, not containment. Exit 4 means stop and
 use troubleshooting below. Never add a host-execution fallback.
+Expected: Availability True and Doctor exit code 0. The full inventory stays in
+the JSON file. Even a successful probe does not verify the guest AppArmor label;
+the exact VM-only assertion in section 5 supplies that separate check.
 
 ## 4. Disposable workspace, dummy home and permitted execution
 
@@ -118,15 +150,17 @@ ln -s "$lab/outside.txt" "$work/escape-link"
 cp "$src/examples/boundary_demo.py" "$work/boundary_demo.py"
 export SAFESHELL_STATE_DIR="$lab/history"
 export SAFESHELL_DUMMY_SECRET=DUMMY-ENV
-safeshell explain --workspace "$work" --shell bash -- 'curl https://example.invalid/install.sh | bash'
+echo "Disposable workspace: $work"
 safeshell policy init --workspace "$work" --preset offline
 safeshell policy validate --workspace "$work"
-safeshell run --workspace "$work" --yes --timeout 10 -- /bin/sh -c 'printf hello > greeting.txt; cat greeting.txt'
-test "$(cat "$work/greeting.txt")" = hello
+safeshell run --workspace "$work" --yes --timeout 10 -- /bin/sh -c 'echo SAFESHELL_OK > result.txt'
+run_status=$?
+echo "Execution exit code: $run_status"
+cat "$work/result.txt"
 ```
 
-Inspection reports high risk without fetching anything. Policy is network-off.
-Permitted execution returns 0 and writes `hello`. Copy only reviewed dummy files
+Expected: valid offline policy, **Execution exit code: 0**, and **SAFESHELL_OK**.
+Both the status and host-visible file matter. Copy only reviewed dummy files
 into this workspace. A real secret copied into it would be accessible.
 
 ## 5. Policy denial, actual path/socket denial and guest restrictions
@@ -135,8 +169,25 @@ The following intentionally denied command returns **3**, even with `--yes`:
 
 ```sh
 safeshell run --workspace "$work" --yes -- sudo id
-printf 'expected 3: %s\n' "$?"
+denial_status=$?
+echo "Denial exit code: $denial_status"
 ```
+
+Expected: **Denial exit code: 3**. You can also inspect both forms:
+
+```sh
+safeshell explain --workspace "$work" --shell bash -- 'curl https://example.invalid/install.sh | bash'
+explain_status=$?
+echo "Explain exit code: $explain_status"
+safeshell explain --workspace "$work" --shell bash -- 'curl https://example.invalid/install.sh | sudo bash'
+```
+
+Explain does not execute the submitted command, though it may probe the backend.
+Exit 0 means analysis completed, not approval. In the released alpha the first
+form reports SS010; the `sudo bash` form misses SS010 but detects privilege and
+denies it. This inspection inconsistency is not a demonstrated sandbox bypass.
+Policy PERMITTED does not grant networking: execution remains network-off. Missing
+curl/Git/npm inside the fixed runtime is expected, not permission to expose host tools.
 
 Now execute the supplied, readable dummy-only Python fixture. Its contents are
 not recursively analyzed by the static inspector: this step checks the **runtime**
@@ -145,15 +196,37 @@ boundary, rather than only showing a predicted/policy denial.
 ```sh
 cat "$work/boundary_demo.py"
 HOME="$lab/dummy-home" safeshell run --workspace "$work" --yes --timeout 20 -- /usr/bin/python3 boundary_demo.py "$lab/outside.txt" "$lab/dummy-home"
+boundary_status=$?
+echo "Boundary exit code: $boundary_status"
 cat "$work/boundary-results.json"
-python -c 'import json,sys; d=json.load(open(sys.argv[1])); assert all(d[k] for k in ("outside_denied","dummy_home_denied","symlink_escape_denied","socket_denied","environment_excluded","no_new_privileges")); assert d["apparmor_profile"]=="safeshell-bwrap//&safeshell-child (enforce)"' "$work/boundary-results.json"
+python - "$work/boundary-results.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+keys = ("outside_denied", "dummy_home_denied", "symlink_escape_denied",
+        "socket_denied", "environment_excluded", "no_new_privileges")
+assert all(d[k] for k in keys)
+print("Six dummy boundary checks: PASS (6/6)")
+print("Reported AppArmor label:", json.dumps(d["apparmor_profile"]))
+PY
 ```
 
-Expected: exit 0; all booleans true and the exact enforced profile stack. The
+Expected on either tested Linux setup: exit 0 and **PASS (6/6)**. The
 fixture requires outside-file, dummy-home-key and escaping-symlink reads to fail;
 IPv4 socket creation to return EPERM; dummy environment exclusion; zero effective
 capabilities, NNP=1 and seccomp mode 2. It sends no packets and reads no real
 credentials. This short demo is not the complete boundary suite or a security audit.
+
+**Fresh VirtualBox VM only: require the exact enforced stack separately. Do not
+skip this assertion and describe the VM stack as verified.**
+
+```sh
+python -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["apparmor_profile"]=="safeshell-bwrap//&safeshell-child (enforce)"; print("VM AppArmor stack: verified (enforce)")' "$work/boundary-results.json"
+```
+
+**WSL2:** the manual Ubuntu 24.04/WSL2 run passed the six dummy checks but reported
+`"kernel\u0000"`, not the expected enforced stack. Record the escaped label as
+observed; do not reinterpret it as a verified AppArmor stack or apply the VM-only
+assertion/reversal. These are different verification scopes.
 
 ## 6. Timeout, descendant cleanup, output limit and history
 
@@ -163,16 +236,20 @@ descendant's full eight-second write delay:
 
 ```sh
 safeshell run --workspace "$work" --yes --timeout 5 -- /bin/sh -c 'echo ready > ready; (sleep 8; echo escaped > late) & wait'
-printf 'expected 124: %s\n' "$?"
-test -f "$work/ready"
+timeout_status=$?
+echo "Timeout exit code: $timeout_status"
+if test -f "$work/ready"; then echo 'Readiness marker: present'; else echo 'FAIL: command never became ready'; fi
 sleep 9
-test ! -e "$work/late" && echo 'No delayed descendant write'
+if test ! -e "$work/late"; then echo 'No delayed descendant write'; else echo 'FAIL: delayed write appeared'; fi
 safeshell run --workspace "$work" --yes --max-output-bytes 32 -- /usr/bin/python3 -c 'print("x"*10000)'
-printf 'expected 125: %s\n' "$?"
+output_status=$?
+echo "Output-limit exit code: $output_status"
+safeshell history
 safeshell history --json > "$lab/sessions.json"
 session_id=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["sessions"][0]["id"])' "$lab/sessions.json")
 safeshell history show "$session_id" --json
 safeshell history delete "$session_id" --json
+safeshell history
 ```
 
 Expected: timeout 124, readiness file present, no delayed write; output overflow
@@ -180,6 +257,9 @@ Expected: timeout 124, readiness file present, no delayed write; output overflow
 limits from a child returning the same number. Output, environment values and raw
 arguments are not persisted. History is local and not tamper-evident. Killing a
 command does not roll back its writes or certify generated files.
+Any FAIL, unexpected exit or missing readiness marker invalidates the cleanup
+result. Use a fresh section-4 workspace if repeating the test, so old markers
+cannot be mistaken for current success.
 
 ## 7. Complete enforcement suite (optional for testers)
 
@@ -202,7 +282,7 @@ this guide. Actual probes/tests remain unprivileged. Require **zero** skips,
 failures and errors; see [recorded counts and CI links](VALIDATION.md). Native CI
 also builds distributions and tests fresh offline wheel installation.
 
-## Troubleshooting and reversal
+## Troubleshooting and reversal (profile removal is VM-only)
 
 | Symptom | Action |
 | --- | --- |
@@ -213,8 +293,11 @@ also builds distributions and tests fresh offline wheel installation.
 | Timeout before readiness | The fixture did not prove cleanup; report slow setup/environment and keep the readiness assertion. Do not hide it with a skip. |
 | Invalid history permissions | Use this new lab's history directory outside the workspace; POSIX requires ownership and mode 0700. |
 | VirtualBox cannot boot | Verify host architecture/hardware support and vendor instructions. Do not modify an existing private VM or globally disable host security. |
+| WSL label is `"kernel\u0000"` | Record it as observed; six checks do not prove the VM's enforced AppArmor stack. Do not install/remove the VM profile blindly. |
+| `safeshell` not found or `$work` is empty after reopening | Reactivate the venv and recreate terminal variables/workspace as in README; do not continue using undefined variables. |
 
-After all SafeShell commands have returned, close other test sessions before
+**Only if you installed the section-3 profile in this VM:** after all SafeShell
+commands have returned, close other test sessions before
 unloading profiles (unloading changes protection for any still-running tasks):
 
 ```sh

@@ -24,51 +24,232 @@ There is no GUI, AI service, telemetry, network-enabled execution policy, additi
 sandbox backend or runtime Python package dependency. Inspection cannot prove what
 arbitrary code will do. See [the threat model](docs/THREAT_MODEL.md).
 
-## Install and try it
+## Numbered quick start: Ubuntu 24.04 / WSL2 or a Linux guest
 
-Start with the **[complete VirtualBox guide](docs/VIRTUALBOX.md)** for a fresh
-Ubuntu 24.04 LTS x86_64 guest. It includes required scoped AppArmor setup and its
-reversal. Never disable AppArmor or user-namespace restrictions globally.
+Run the setup steps **in order, in the same Ubuntu Bash terminal**. Stop if an
+installation or capability check fails. Do not enable `set -e` for this walkthrough:
+denial and limit examples intentionally return nonzero. Use dummy data only.
 
-On a configured Debian/Ubuntu host: Python 3.11+, non-setuid Bubblewrap 0.8+,
-libseccomp2, python3-venv and working unprivileged namespaces are required. Install
-current distro security updates. Run SafeShell as a normal user, not root.
-
-Download the wheel, source archive and `SHA256SUMS` from the
-[experimental prerelease](https://github.com/HamzaGhebriche/SafeShell/releases/tag/v0.1.0-alpha)
-into a new directory. Then:
+### 1. Identify the environment and use a regular user
 
 ```sh
-sha256sum --check SHA256SUMS
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install --no-index --no-deps safeshell_cli-0.1.0a1-py3-none-any.whl
-safeshell --version
-safeshell doctor --json
+uname -r
+id -un
+id -u
 ```
 
-Expected version: `0.1.0a1`. Doctor must return 0 and `available: true` for protected
-execution. Refusal (exit 4) means stop and diagnose prerequisites; do not bypass it.
-Checksums identify downloaded bytes; they are not a digital signature or audit.
+A kernel name containing `microsoft` / `WSL2` identifies Ubuntu running in WSL2.
+That is Linux on the Windows host, **not a fresh VirtualBox guest**. A VirtualBox
+guest boots its own Linux kernel, usually named `...-generic` on Ubuntu. A kernel
+name without `microsoft` alone does not prove that VirtualBox is in use.
 
-Use a **dummy-only disposable workspace**, with history outside it:
+UID must be **nonzero**. SafeShell refuses protected execution as root. If you
+already have a regular-user terminal, continue to step 2. Never use `sudo safeshell`.
+
+If your terminal starts as root, first look for an existing normal login account:
+
+```sh
+getent passwd | awk -F: '$3 >= 1000 && $3 < 65534 {print $1, $6, $7}'
+```
+
+Choose your existing account (with a login shell, not a service account). For
+example, **replace `tester` below with that account's name**, then switch:
+
+```sh
+su - tester
+```
+
+**Only if no suitable account exists**, create one from the root terminal instead:
+
+```sh
+adduser tester
+usermod -aG sudo tester
+su - tester
+```
+
+These are alternative root-recovery paths, not steps to run in a normal-user
+session. Continue below inside the selected user's login shell; check `id -u`
+again. The sudo group permits prerequisite administration, not running SafeShell
+as root. On WSL, `su -` suffices for this session; no default-user change is needed.
+
+### 2. Install host prerequisites
+
+Python 3.11+, non-setuid Bubblewrap 0.8+, libseccomp2 and working unprivileged
+namespaces are required. Inside Ubuntu, as the normal sudo-capable user:
+
+```sh
+sudo apt-get update
+sudo apt-get install -y python3 python3-venv bubblewrap libseccomp2 curl ca-certificates
+```
+
+Keep distro security updates current. Native Windows/macOS execution is unsupported;
+use Ubuntu in WSL2 or a Linux guest for this walkthrough.
+
+### 3. Download the exact alpha release and verify checksums
+
+```sh
+download_dir="$HOME/safeshell-alpha-download"
+mkdir -p "$download_dir"
+cd "$download_dir"
+base=https://github.com/HamzaGhebriche/SafeShell/releases/download/v0.1.0-alpha
+for asset in safeshell_cli-0.1.0a1-py3-none-any.whl safeshell_cli-0.1.0a1.tar.gz SHA256SUMS; do
+  curl --fail --location --output "$asset" "$base/$asset" || exit 1
+done
+sha256sum --check SHA256SUMS || exit 1
+tar -xzf safeshell_cli-0.1.0a1.tar.gz
+src="$download_dir/safeshell_cli-0.1.0a1"
+```
+
+Expected: **both distribution files say `OK`**. Stop on a failed download or
+checksum. The [existing prerelease](https://github.com/HamzaGhebriche/SafeShell/releases/tag/v0.1.0-alpha)
+also lists asset hashes. Checksums identify bytes; they are not a signature or audit.
+The verified source archive supplies the optional dummy fixture and scoped VM profile.
+Keep following this repository's current guide: the unchanged source archive
+retains the original release documentation.
+
+### 4. Install into a Python virtual environment
+
+```sh
+python3 -m venv "$HOME/safeshell-alpha-venv"
+. "$HOME/safeshell-alpha-venv/bin/activate"
+python -m pip install --no-index --no-deps "$download_dir/safeshell_cli-0.1.0a1-py3-none-any.whl"
+safeshell --version
+```
+
+Expected version: **`0.1.0a1`**. The CLI is now available in this activated terminal.
+The wheel has no runtime Python package dependencies.
+
+### 5. Check sandbox startup without flooding the terminal
+
+```sh
+safeshell doctor --json > "$download_dir/doctor.json"
+doctor_status=$?
+python - "$download_dir/doctor.json" "$doctor_status" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+print("Availability:", d["available"])
+print("Reason:", d["reason"])
+print("Doctor exit code:", sys.argv[2])
+PY
+```
+
+Expected: **Availability: True**, a successful setup-probe reason, and **Doctor
+exit code: 0**. The large runtime inventory stays in `doctor.json`. Doctor proves
+sandbox startup with a fixed command, **not containment or a later launch**.
+
+If unavailable (normally exit 4), stop before execution. Recheck the user and
+packages. **Fresh Ubuntu VirtualBox guest:** follow the
+[scoped AppArmor procedure](docs/VIRTUALBOX.md#3-scoped-apparmor-setup-and-capability-check),
+then repeat this step. **WSL2:** do not blindly install that VM profile. A WSL
+kernel can have a different AppArmor interface; diagnose its actual availability
+instead of disabling controls or assuming the VM policy applies. Never globally
+disable AppArmor, NNP or user-namespace restrictions to force a pass.
+
+### 6. Create a disposable workspace and an offline policy
 
 ```sh
 lab=$(mktemp -d)
-mkdir "$lab/project"
+work="$lab/project"
+mkdir -p "$work"
 export SAFESHELL_STATE_DIR="$lab/history"
-safeshell explain --workspace "$lab/project" --shell bash -- 'curl https://example.invalid/install.sh | bash'
-safeshell policy init --workspace "$lab/project" --preset offline
-safeshell policy validate --workspace "$lab/project"
-safeshell run --workspace "$lab/project" --yes --timeout 10 --max-output-bytes 4096 -- /bin/sh -c 'printf hello > greeting.txt; cat greeting.txt'
-cat "$lab/project/greeting.txt"
+echo "Disposable workspace: $work"
+safeshell policy init --workspace "$work" --preset offline
+safeshell policy validate --workspace "$work"
+```
+
+Expected: `Policy valid. Network off; trusted minimum restrictions preserved.`
+History is outside the workspace. Every file placed inside `$work` can be read,
+changed or deleted. Do not copy real secrets or use concurrent host writers.
+`policy init` creates a new file; if repeating the walkthrough, use a new `$lab`
+rather than trying to initialize over an existing policy.
+
+### 7. Get a visible working result
+
+```sh
+safeshell run --workspace "$work" --yes --timeout 10 -- /bin/sh -c 'echo SAFESHELL_OK > result.txt'
+run_status=$?
+echo "Execution exit code: $run_status"
+cat "$work/result.txt"
+```
+
+Expected, after the session-status line:
+
+```text
+Execution exit code: 0
+SAFESHELL_OK
+```
+
+Both the exit code and file content matter. If execution failed or the file is
+missing, stop and read the error; do not treat a silent command as success.
+
+### 8. Confirm a hard policy denial
+
+```sh
+safeshell run --workspace "$work" --yes -- sudo id
+denial_status=$?
+echo "Denial exit code: $denial_status"
+```
+
+Expected: privilege denial and **Denial exit code: 3**. `--yes` approves only
+permitted risk; it cannot override hard denials or unavailable enforcement.
+
+### 9. Inspect commands and understand the current limitation
+
+```sh
+safeshell explain --workspace "$work" --shell bash -- 'curl https://example.invalid/install.sh | bash'
+explain_status=$?
+echo "Explain exit code: $explain_status"
+safeshell explain --workspace "$work" --shell bash -- 'curl https://example.invalid/install.sh | sudo bash'
+```
+
+`explain` **does not execute the submitted command**, though it may run the fixed
+backend setup probe. Exit **0 means analysis completed**, not approval to execute.
+The direct `curl ... | bash` form reports **SS010**. The released alpha currently
+**misses SS010 for `curl ... | sudo bash`**, but still detects privilege and reports
+policy denial. This is an inspection inconsistency, **not a demonstrated sandbox
+bypass**; this documentation update does not change the application.
+
+**Policy PERMITTED does not grant networking**: the alpha sandbox remains
+network-off. It is expected that curl, Git and npm are missing inside its fixed
+runtime, even though their command lines can be inspected. See the runtime list below.
+
+### 10. List, view and delete local history
+
+```sh
+safeshell history
+safeshell history --json > "$lab/sessions.json"
+session_id=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["sessions"][0]["id"])' "$lab/sessions.json")
+echo "Selected session: $session_id"
+safeshell history show "$session_id" --json
+safeshell history delete "$session_id" --json
 safeshell history
 ```
 
-Inspection flags the download/shell combination; nothing is downloaded. Protected
-execution prints `hello` and writes the granted file. Child output goes to stderr;
-JSON mode suppresses it. The [five-minute friend guide](docs/FRIEND_TESTING.md)
-covers denial, history, expected errors and a sanitized bug-report template.
+Expected: session UUIDs and decisions/statuses; `show` displays the selected
+metadata record and `delete` confirms its UUID. Other sessions remain. No child
+output, environment values or raw arguments are stored by default. This is local
+metadata, not a signed forensic log.
+
+### If you reopen the terminal
+
+Return to the **same regular user**, then reactivate the installed venv:
+
+```sh
+. "$HOME/safeshell-alpha-venv/bin/activate"
+download_dir="$HOME/safeshell-alpha-download"
+src="$download_dir/safeshell_cli-0.1.0a1"
+```
+
+Shell variables do not survive a new terminal. Recreate **`$lab`, `$work` and
+`SAFESHELL_STATE_DIR` by repeating step 6**, then continue the tests. Reactivating
+the venv alone does not recreate those variables. Do not rerun `policy init` in
+an old workspace by accident. Keep the setup and each walkthrough in one terminal.
+
+For six dummy boundary checks, timeout/cleanup, output limits and VM-specific
+AppArmor verification, see [the longer guide](docs/VIRTUALBOX.md#4-disposable-workspace-dummy-home-and-permitted-execution).
+WSL users may follow its common test sections, **not** its VM-only profile setup,
+profile-stack assertion or reversal. The
+[five-minute friend guide](docs/FRIEND_TESTING.md) starts from this installed setup.
 
 ## Platform and runtime support
 
@@ -76,7 +257,7 @@ covers denial, history, expected errors and a sanitized bug-report template.
 | --- | --- | --- | --- |
 | Ubuntu 24.04 x86_64 | Yes | Yes, with working namespaces and reviewed scoped AppArmor configuration | Native Ubuntu boundary CI and installed-wheel checks; [results](docs/VALIDATION.md) |
 | Debian 12 x86_64 | Yes | Implemented; current host must pass doctor | Earlier separate native-kernel KVM validation; recorded source checkpoint, not a final-tag rerun |
-| Ubuntu / WSL2 x86_64 | Yes | Available when the Linux kernel/backend supports it | Earlier local validation; WSL is Linux, not native Windows enforcement |
+| Ubuntu 24.04 / WSL2 x86_64 | Yes | Manual regular-user wheel workflow succeeded; current host must pass doctor | Six dummy checks passed; reported `kernel\u0000` label does **not** verify the VM AppArmor stack |
 | Native Windows | Yes; NTFS history ACLs not verified | **Refused** | Portable CI and installed refusal |
 | macOS, including arm64 | Yes | **Refused** | Portable CI and installed refusal; not Linux arm64 validation |
 | Other Linux architectures/filesystems | No validation claim | Unverified; doctor alone is not containment verification | No release support claim |
@@ -130,6 +311,10 @@ when its report predicts denial. [JSON](docs/JSON.md), [policy](docs/POLICY.md).
 [Validation and actual CI](docs/VALIDATION.md) · [contributing](CONTRIBUTING.md) ·
 [security reports](SECURITY.md) · [MIT license](LICENSE) · [changelog](CHANGELOG.md) ·
 [release notes](RELEASE_NOTES.md) · [architecture](docs/ARCHITECTURE.md).
+
+[Documentation recipe validation, 2026-11-02](docs/DOCS_VALIDATION_2026-11-02.md)
+records which released-wheel workflows were rerun, including the WSL label and
+the inspection inconsistency. It does not claim a new VirtualBox test.
 
 The complete native Linux suite must pass with zero skips. Portable CI rejects
 unexpected skips and reports explicit unsupported-platform cases. Builds are
