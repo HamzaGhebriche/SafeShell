@@ -95,12 +95,12 @@ def decide(findings: list[Finding], graph: Graph, incomplete: bool) -> tuple[lis
         if rule:
             identifier, reason, evidence = rule
             correlations.append(
-                dict(
-                    rule=identifier,
-                    explanation=reason,
-                    trigger=trigger["id"],
-                    evidence=sorted({f.finding_id for f in evidence}),
-                )
+                {
+                    "rule": identifier,
+                    "explanation": reason,
+                    "trigger": trigger["id"],
+                    "evidence": sorted({f.finding_id for f in evidence}),
+                }
             )
     if correlations:
         verdict, confidence = "HIGH RISK", "HIGH"
@@ -122,12 +122,12 @@ def decide(findings: list[Finding], graph: Graph, incomplete: bool) -> tuple[lis
             "No strong risky execution evidence detected. LOW RISK does not mean guaranteed safe."
         ]
         action = "Review limitations and use containment for unfamiliar code."
-    return correlations, dict(
-        verdict=verdict,
-        confidence=confidence,
-        primary_reasons=reasons,
-        recommended_action=action,
-        evidence_references=sorted({f for c in correlations for f in c["evidence"]})
+    return correlations, {
+        "verdict": verdict,
+        "confidence": confidence,
+        "primary_reasons": reasons,
+        "recommended_action": action,
+        "evidence_references": sorted({f for c in correlations for f in c["evidence"]})
         if correlations
         else [f.finding_id for f in findings],
-    )
+    }

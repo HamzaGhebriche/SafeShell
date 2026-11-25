@@ -34,18 +34,18 @@ class Finding:
             "description",
         ):
             if not isinstance(getattr(self, name), str):
-                raise ValueError(f"Invalid finding field: {name}")
+                raise TypeError(f"Invalid finding field: {name}")
         for name in ("file", "package", "installed_version", "fixed_version"):
             if getattr(self, name) is not None and not isinstance(getattr(self, name), str):
-                raise ValueError(f"Invalid finding field: {name}")
+                raise TypeError(f"Invalid finding field: {name}")
         if self.line is not None and (type(self.line) is not int or self.line < 1):
             raise ValueError("Invalid finding line")
         if not isinstance(self.identifiers, list) or any(
             not isinstance(x, str) for x in self.identifiers
         ):
-            raise ValueError("Invalid finding identifiers")
+            raise TypeError("Invalid finding identifiers")
         if not isinstance(self.metadata, dict) or type(self.execution_relevant) is not bool:
-            raise ValueError("Invalid finding metadata/reachability")
+            raise TypeError("Invalid finding metadata/reachability")
 
 
 @dataclass
@@ -91,21 +91,21 @@ class Graph:
             return self._node_index[key]
         identifier = f"n{len(self.nodes)}"
         self.nodes.append(
-            dict(
-                id=identifier,
-                kind=kind,
-                label=label,
-                file=file,
-                line=line,
-                automatic=automatic,
-                context=context,
-            )
+            {
+                "id": identifier,
+                "kind": kind,
+                "label": label,
+                "file": file,
+                "line": line,
+                "automatic": automatic,
+                "context": context,
+            }
         )
         self._node_index[key] = identifier
         return identifier
 
     def edge(self, source: str, target: str, relation: str) -> None:
-        edge = dict(source=source, target=target, relation=relation)
+        edge = {"source": source, "target": target, "relation": relation}
         key = (source, target, relation)
         if key not in self._edge_index:
             self.edges.append(edge)

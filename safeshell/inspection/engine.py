@@ -1,14 +1,13 @@
 """Shared orchestration for terminal, JSON and benchmark consumers."""
 
+import shutil
 import tempfile
 import time
-import shutil
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 
 from ..audit import safe
-
 from .adapters import Adapter, default_adapters
 from .decision import decide, deduplicate
 from .inventory import inventory, snapshot
@@ -73,8 +72,7 @@ def inspect_repository(
                 if finding.file:
                     raw = finding.file.replace("\\", "/")
                     prefix = tree.as_posix() + "/"
-                    if raw.startswith(prefix):
-                        raw = raw[len(prefix) :]
+                    raw = raw.removeprefix(prefix)
                     finding.file = raw
                     node = next(
                         (n["id"] for n in graph.nodes if n["kind"] == "file" and n["file"] == raw),
@@ -96,53 +94,53 @@ def inspect_repository(
         if finding.source != "SafeShell":
             finding.execution_relevant = finding.metadata.get("node") in reachable
     statuses = [
-        dict(
-            source=e.source,
-            status=e.status,
-            reason=e.reason,
-            version=e.version,
-            exit_code=e.exit_code,
-            finding_count=len(e.findings),
-            high_severity_count=sum(f.severity in {"HIGH", "CRITICAL"} for f in e.findings),
-        )
+        {
+            "source": e.source,
+            "status": e.status,
+            "reason": e.reason,
+            "version": e.version,
+            "exit_code": e.exit_code,
+            "finding_count": len(e.findings),
+            "high_severity_count": sum(f.severity in {"HIGH", "CRITICAL"} for f in e.findings),
+        }
         for e in engines
     ]
     findings, duplicates = deduplicate(findings)
     incomplete = bool(gaps) or any(e.status != "COMPLETE" for e in engines)
     correlations, verdict = decide(findings, graph, incomplete)
-    coverage = dict(
-        complete=not incomplete,
-        files=len(inv.files),
-        entries=inv.entries,
-        gaps=gaps,
-        excluded=inv.excluded,
-        scope="Bounded snapshot; literal static execution surfaces only",
-    )
+    coverage = {
+        "complete": not incomplete,
+        "files": len(inv.files),
+        "entries": inv.entries,
+        "gaps": gaps,
+        "excluded": inv.excluded,
+        "scope": "Bounded snapshot; literal static execution surfaces only",
+    }
     verdict["analysis_coverage"] = coverage
     verdict["unavailable_scanners"] = [e.source for e in engines if e.status == "UNAVAILABLE"]
     verdict["disabled_scanners"] = [e.source for e in engines if e.status == "DISABLED"]
-    return dict(
-        schema_version="inspection-1",
-        scan={
+    return {
+        "schema_version": "inspection-1",
+        "scan": {
             "started_at": started_at,
             "duration_seconds": round(time.monotonic() - started, 6),
             "offline": True,
         },
-        target={"kind": "local_directory", "path": str(inv.root)},
-        coverage=coverage,
-        engines=statuses,
-        findings=[asdict(f) for f in findings],
-        execution_graph=asdict(graph),
-        correlations=correlations,
-        verdict=verdict,
-        duplicates_suppressed=duplicates,
-        limitations=[
+        "target": {"kind": "local_directory", "path": str(inv.root)},
+        "coverage": coverage,
+        "engines": statuses,
+        "findings": [asdict(f) for f in findings],
+        "execution_graph": asdict(graph),
+        "correlations": correlations,
+        "verdict": verdict,
+        "duplicates_suppressed": duplicates,
+        "limitations": [
             "Static evidence is not proof of malicious intent.",
             "Literal references may be data or unreachable branches.",
             "Use a disposable immutable copy; concurrent hostile writers are unsupported.",
             "Dynamic imports, expressions and generated code are not resolved.",
         ],
-    )
+    }
 
 
 def render_map(report: dict) -> str:

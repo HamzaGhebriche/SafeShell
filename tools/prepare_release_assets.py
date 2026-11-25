@@ -18,7 +18,7 @@ def main():
     wheel = args.dist / f"safeshell_cli-{VERSION}-py3-none-any.whl"
     source = args.dist / f"safeshell_cli-{VERSION}.tar.gz"
     expected = {
-        p.relative_to(ROOT).as_posix(): p.read_bytes() for p in (ROOT / "safeshell").glob("*.py")
+        p.relative_to(ROOT).as_posix(): p.read_bytes() for p in (ROOT / "safeshell").rglob("*.py")
     }
     metadata = f"safeshell_cli-{VERSION}.dist-info/"
     with zipfile.ZipFile(wheel) as archive:

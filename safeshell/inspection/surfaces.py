@@ -156,7 +156,7 @@ def analyze(inv: Inventory) -> tuple[list[Finding], Graph, list[str]]:
                 command(name, "Python packaging executes setup.py", f'python "{name}"', True, 1)
             elif base == "Dockerfile" or base.startswith("Dockerfile."):
                 for number, line in enumerate(text.splitlines(), 1):
-                    if re.match(r"\s*(RUN|CMD|ENTRYPOINT)\b", line, re.I):
+                    if re.match(r"\s*(RUN|CMD|ENTRYPOINT)\b", line, re.IGNORECASE):
                         command(name, "Container build/runtime", line, True, number)
             elif base in {"Makefile", "makefile", "Justfile", "justfile", "Taskfile.yml"}:
                 for number, line in enumerate(text.splitlines(), 1):
@@ -203,22 +203,22 @@ def analyze(inv: Inventory) -> tuple[list[Finding], Graph, list[str]]:
             }:
                 data = json.loads(text)
 
-                def walk(value):
+                def walk(value, file_name, source_text):
                     if isinstance(value, dict):
                         if isinstance(value.get("command"), str):
                             command(
-                                name,
+                                file_name,
                                 "Agent hook/server (conditional)",
                                 value["command"],
-                                line=member_line(text, "command", value["command"]),
+                                line=member_line(source_text, "command", value["command"]),
                             )
                         for child in value.values():
-                            walk(child)
+                            walk(child, file_name, source_text)
                     elif isinstance(value, list):
                         for child in value:
-                            walk(child)
+                            walk(child, file_name, source_text)
 
-                walk(data)
+                walk(data, name, text)
             elif base in {"AGENTS.md", "CLAUDE.md"}:
                 add(
                     "other",
@@ -248,7 +248,7 @@ def analyze(inv: Inventory) -> tuple[list[Finding], Graph, list[str]]:
         for offset, (original, line) in enumerate(zip(body.splitlines(), cleaned.splitlines())):
             number = offset + 1 if source else parent_line
             for category, pattern in PATTERNS.items():
-                if re.search(pattern, line, re.I):
+                if re.search(pattern, line, re.IGNORECASE):
                     action = graph.node(
                         category, category.replace("_", " "), name, number, context=parent
                     )

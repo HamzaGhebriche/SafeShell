@@ -134,7 +134,7 @@ def invocations(text: str, suffix: str, source: bool) -> tuple[list[tuple[str, s
     elif source and suffix in {".js", ".mjs", ".cjs"}:
         launches = re.compile(
             r"\b(?:spawn|spawnSync|execFile|execFileSync|exec|execSync)\s*\(\s*(['\"])(.*?)\1(?:\s*,\s*\[([^\]]*)\])?",
-            re.S,
+            re.DOTALL,
         )
         for match in launches.finditer(text):
             if re.match(r"\s*,\s*\{[^}]*\bcwd\s*:", text[match.end() : match.end() + 300]):

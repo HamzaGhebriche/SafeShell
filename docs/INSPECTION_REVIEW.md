@@ -220,6 +220,26 @@ Il exécute réellement `python3 tools/validate_linux.py --as-user nobody` dans 
 copie temporaire Linux. Wheel/sdist et smoke installé font l'objet des artefacts
 `build.log` et `installed-smoke.json` du même dossier de validation.
 
+## Finalisation et corrections CI de la PR
+
+La première CI de la PR a utilisé Ruff **0.17.3**, version fixée par le projet,
+alors que les contrôles locaux ci-dessus utilisaient **0.15.21**. Les 19 erreurs
+signalées ont été corrigées sans désactiver de règles : littéraux dictionnaires,
+imports, noms complets des flags regex, removeprefix, TypeError pour les types
+invalides et paramètres explicites pour le parcours des configurations d'agents.
+
+Le job natif Ubuntu a réussi les tests de confinement et le smoke installé, puis
+échoué au contrôle des distributions : celui-ci attendait seulement les modules
+Python à la racine. Il vérifie désormais aussi les modules imbriqués. Quatre cas
+de régression vérifient le sous-paquet valide, le refus d'un fichier wheel
+inattendu, d'un module source manquant et d'un fichier source privé.
+
+Après ces correctifs : Ruff **0.17.3** lint/format et mypy ciblé réussis ;
+**144 tests Windows réussis, 25 ignorés attendus**. Les mesures de scanners réels
+et de couverture précédentes restent celles de la revue locale initiale ; elles
+ne sont pas présentées comme de nouvelles exécutions. Les résultats CI du commit
+final sont consultables dans la PR.
+
 ## Limites restantes
 
 - Une seule origine de dépôt réel : la copie du commit local SafeShell. Les

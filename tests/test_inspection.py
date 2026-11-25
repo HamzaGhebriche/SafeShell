@@ -120,9 +120,8 @@ def test_symlink_and_traversal(tmp_path):
     target = tmp_path / "target"
     target.mkdir()
     # Mock a link entry on systems where creating symlinks needs privileges.
-    with patch.object(Path, "is_symlink", return_value=True):
-        with pytest.raises(ValueError):
-            inventory(target)
+    with patch.object(Path, "is_symlink", return_value=True), pytest.raises(ValueError):
+        inventory(target)
     write(target, "package.json", '{"scripts":{"install":"node ../../outside/secret.js"}}')
     report = inspect_repository(target, [])
     assert not any(n["file"] == "outside/secret.js" for n in report["execution_graph"]["nodes"])

@@ -52,15 +52,15 @@ def metrics(expected: list[bool], predicted: list[bool]) -> dict:
     fp = sum(not a and b for a, b in zip(expected, predicted))
     tn = sum(not a and not b for a, b in zip(expected, predicted))
     fn = sum(a and not b for a, b in zip(expected, predicted))
-    return dict(
-        true_positives=tp,
-        false_positives=fp,
-        true_negatives=tn,
-        false_negatives=fn,
-        precision=tp / (tp + fp) if tp + fp else None,
-        recall=tp / (tp + fn) if tp + fn else None,
-        false_positive_rate=fp / (fp + tn) if fp + tn else None,
-    )
+    return {
+        "true_positives": tp,
+        "false_positives": fp,
+        "true_negatives": tn,
+        "false_negatives": fn,
+        "precision": tp / (tp + fp) if tp + fp else None,
+        "recall": tp / (tp + fn) if tp + fn else None,
+        "false_positive_rate": fp / (fp + tn) if fp + tn else None,
+    }
 
 
 class RecordedAdapter:
@@ -113,41 +113,41 @@ def evaluate() -> dict:
             }
             baselines["uncorrelated_scanners"] = any(baselines.values())
             rows.append(
-                dict(
-                    sample=name,
-                    expected_verdict=expected,
-                    verdict=report["verdict"]["verdict"],
-                    expected_high_risk=dangerous,
-                    baselines=baselines,
-                    engines={e["source"]: e["status"] for e in report["engines"]},
-                    findings_by_source={
+                {
+                    "sample": name,
+                    "expected_verdict": expected,
+                    "verdict": report["verdict"]["verdict"],
+                    "expected_high_risk": dangerous,
+                    "baselines": baselines,
+                    "engines": {e["source"]: e["status"] for e in report["engines"]},
+                    "findings_by_source": {
                         source: engine_counts[source]["finding_count"]
                         if source != "SafeShell"
                         else sum(f["source"] == source for f in report["findings"])
                         for source in [*sources, "SafeShell"]
                     },
-                    false_positive=not dangerous and report["verdict"]["verdict"] == "HIGH RISK",
-                    false_negative=dangerous and report["verdict"]["verdict"] != "HIGH RISK",
-                    duplicates=report["duplicates_suppressed"],
-                    correlations=len(report["correlations"]),
-                    execution_relevant=sum(f["execution_relevant"] for f in report["findings"]),
-                    duration_seconds=time.monotonic() - started,
-                    unavailable_engines=report["verdict"]["unavailable_scanners"],
-                )
+                    "false_positive": not dangerous and report["verdict"]["verdict"] == "HIGH RISK",
+                    "false_negative": dangerous and report["verdict"]["verdict"] != "HIGH RISK",
+                    "duplicates": report["duplicates_suppressed"],
+                    "correlations": len(report["correlations"]),
+                    "execution_relevant": sum(f["execution_relevant"] for f in report["findings"]),
+                    "duration_seconds": time.monotonic() - started,
+                    "unavailable_engines": report["verdict"]["unavailable_scanners"],
+                }
             )
     labels = [r["expected_high_risk"] for r in rows]
-    return dict(
-        schema_version="benchmark-1",
-        mode="synthetic recorded evidence, not real scanner results",
-        samples=rows,
-        metrics={
+    return {
+        "schema_version": "benchmark-1",
+        "mode": "synthetic recorded evidence, not real scanner results",
+        "samples": rows,
+        "metrics": {
             "SafeShell": metrics(labels, [r["verdict"] == "HIGH RISK" for r in rows]),
             **{
                 source: metrics(labels, [r["baselines"][source] for r in rows])
                 for source in [*sources, "uncorrelated_scanners"]
             },
         },
-    )
+    }
 
 
 if __name__ == "__main__":
