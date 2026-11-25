@@ -105,6 +105,12 @@ def main():
         script.write_text("touch inspect-only-marker")
         invoke("explain-script", ["explain", "--json", "--script", str(script)])
         assert not (project / "inspect-only-marker").exists()
+        inspection = invoke("inspect", ["inspect", str(project), "--format", "json"])
+        assert inspection["schema_version"] == "inspection-1"
+        assert inspection["verdict"]["verdict"] in {"LOW RISK", "CAUTION", "HIGH RISK", "UNKNOWN"}
+        graph = invoke("map", ["map", str(project), "--json"])
+        assert "execution_graph" in graph
+        assert not (project / "inspect-only-marker").exists()
         invoke("policy-init", ["policy", "init", "--preset", "offline", "--json"])
         assert (
             invoke("policy-validate", ["policy", "validate", "--json"])["policy"]["network"]

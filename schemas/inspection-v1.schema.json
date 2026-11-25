@@ -1,0 +1,479 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:safeshell:inspection:1",
+  "title": "SafeShell static repository inspection",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "scan",
+    "target",
+    "coverage",
+    "engines",
+    "findings",
+    "execution_graph",
+    "correlations",
+    "verdict",
+    "duplicates_suppressed",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "inspection-1"
+    },
+    "scan": {
+      "type": "object",
+      "required": [
+        "started_at",
+        "duration_seconds",
+        "offline"
+      ],
+      "properties": {
+        "started_at": {
+          "type": "string"
+        },
+        "duration_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "offline": {
+          "const": true
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "kind",
+        "path"
+      ],
+      "properties": {
+        "kind": {
+          "const": "local_directory"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "coverage": {
+      "$ref": "#/$defs/coverage"
+    },
+    "engines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source",
+          "status",
+          "reason",
+          "version"
+        ],
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "COMPLETE",
+              "PARTIAL",
+              "UNAVAILABLE",
+              "DISABLED"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exit_code": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "finding_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "high_severity_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "execution_graph": {
+      "type": "object",
+      "required": [
+        "nodes",
+        "edges"
+      ],
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "kind",
+              "label",
+              "file"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "file": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "line": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 1
+              },
+              "automatic": {
+                "type": "boolean"
+              },
+              "context": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "source",
+              "target",
+              "relation"
+            ],
+            "properties": {
+              "relation": {
+                "enum": [
+                  "invokes",
+                  "triggers",
+                  "downloads",
+                  "reads",
+                  "writes",
+                  "launches"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "correlations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rule",
+          "explanation",
+          "trigger",
+          "evidence"
+        ]
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "required": [
+        "verdict",
+        "confidence",
+        "primary_reasons",
+        "recommended_action",
+        "analysis_coverage",
+        "unavailable_scanners",
+        "evidence_references"
+      ],
+      "properties": {
+        "verdict": {
+          "enum": [
+            "LOW RISK",
+            "CAUTION",
+            "HIGH RISK",
+            "UNKNOWN"
+          ]
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "analysis_coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "primary_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "recommended_action": {
+          "type": "string"
+        },
+        "unavailable_scanners": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "disabled_scanners": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence_references": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "duplicates_suppressed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "confidence": {
+      "enum": [
+        "CONFIRMED",
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "CONTEXTUAL"
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "finding_id",
+        "source",
+        "category",
+        "severity",
+        "confidence",
+        "title",
+        "description",
+        "file",
+        "line",
+        "evidence",
+        "identifiers",
+        "package",
+        "installed_version",
+        "fixed_version",
+        "execution_relevant",
+        "metadata"
+      ],
+      "properties": {
+        "finding_id": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "vulnerability",
+            "secret",
+            "misconfiguration",
+            "suspicious_file",
+            "repository_posture",
+            "execution",
+            "sensitive_access",
+            "external_download",
+            "obfuscation",
+            "persistence",
+            "destructive",
+            "other"
+          ]
+        },
+        "severity": {
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "file": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "identifiers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "execution_relevant": {
+          "type": "boolean"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "package": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "installed_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fixed_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "complete",
+        "files",
+        "entries",
+        "gaps",
+        "excluded",
+        "scope"
+      ],
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "entries": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scope": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "coverage": {
+            "properties": {
+              "complete": {
+                "const": false
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "verdict": {
+            "properties": {
+              "verdict": {
+                "enum": [
+                  "UNKNOWN",
+                  "HIGH RISK"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "engines": {
+            "contains": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "PARTIAL",
+                    "UNAVAILABLE",
+                    "DISABLED"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "coverage": {
+            "properties": {
+              "complete": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

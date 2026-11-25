@@ -39,3 +39,10 @@ returns schema_version, valid, policy. `history --json` returns schema_version a
 `history show ... --json` returns one session; delete returns schema_version and deleted UUID.
 Consumers should tolerate additional fields within version 1. Breaking changes require a new
 schema version. Exit-code meanings are documented in the README.
+
+## Repository inspection reports
+
+`inspect`, `map` and `findings` use the separate `inspection-1` schema with
+`--json` or `--format json`. See [the report contract](INSPECTION.md#json-contract)
+and [JSON Schema](../schemas/inspection-v1.schema.json). Existing command reports
+above retain schema_version 1.
