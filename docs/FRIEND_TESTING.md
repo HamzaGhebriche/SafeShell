@@ -1,6 +1,6 @@
 # Five-minute friend test
 
-SafeShell **v0.1.0-alpha / 0.1.0a1 is experimental**, with no independent security
+SafeShell **v0.1.0-alpha.2 / 0.1.0a2 is experimental**, with no independent security
 audit. Use dummy data in Ubuntu/WSL2 or a disposable Linux VM. **Writable workspace contents can
 be read, changed or deleted.** No CPU, memory, process-count or disk quotas exist.
 Do not use a real project, credential store or workspace with concurrent writers.
@@ -16,13 +16,13 @@ running boundary fixtures. A WSL `"kernel\u0000"` label does not verify that sta
 
 Stay in the **same regular-user Ubuntu Bash terminal**, never `sudo safeshell`.
 If starting as root, use the README's existing-account switch; create an account
-only if none is suitable. `safeshell --version` must say 0.1.0a1. If reopening a
+only if none is suitable. `safeshell --version` must say 0.1.0a2. If reopening a
 terminal, reactivate the venv first:
 
 ```sh
 . "$HOME/safeshell-alpha-venv/bin/activate"
 download_dir="$HOME/safeshell-alpha-download"
-src="$download_dir/safeshell_cli-0.1.0a1"
+src="$download_dir/safeshell_cli-0.1.0a2"
 safeshell doctor --json > "$download_dir/doctor.json"
 doctor_status=$?
 python - "$download_dir/doctor.json" "$doctor_status" <<'PY'

@@ -57,16 +57,16 @@ sudo apt-get install -y python3 python3-venv bubblewrap libseccomp2 apparmor cur
 download_dir="$HOME/safeshell-alpha-download"
 mkdir -p "$download_dir"
 cd "$download_dir"
-base=https://github.com/HamzaGhebriche/SafeShell/releases/download/v0.1.0-alpha
-for asset in safeshell_cli-0.1.0a1-py3-none-any.whl safeshell_cli-0.1.0a1.tar.gz SHA256SUMS; do
+base=https://github.com/HamzaGhebriche/SafeShell/releases/download/v0.1.0-alpha.2
+for asset in safeshell_cli-0.1.0a2-py3-none-any.whl safeshell_cli-0.1.0a2.tar.gz SHA256SUMS; do
   curl --fail --location --output "$asset" "$base/$asset" || exit 1
 done
 sha256sum --check SHA256SUMS || exit 1
-tar -xzf safeshell_cli-0.1.0a1.tar.gz
-src="$PWD/safeshell_cli-0.1.0a1"
+tar -xzf safeshell_cli-0.1.0a2.tar.gz
+src="$PWD/safeshell_cli-0.1.0a2"
 python3 -m venv "$HOME/safeshell-alpha-venv"
 . "$HOME/safeshell-alpha-venv/bin/activate"
-python -m pip install --no-index --no-deps "$PWD/safeshell_cli-0.1.0a1-py3-none-any.whl"
+python -m pip install --no-index --no-deps "$PWD/safeshell_cli-0.1.0a2-py3-none-any.whl"
 safeshell --version
 uname -m
 uname -r
@@ -74,7 +74,7 @@ id -u
 bwrap --version
 ```
 
-Expected: both checksums `OK`, version `0.1.0a1`, architecture `x86_64`, UID
+Expected: both checksums `OK`, version `0.1.0a2`, architecture `x86_64`, UID
 nonzero, Bubblewrap 0.8+. Do not continue on mismatched checksums. Checksums from
 the same release identify bytes; they are not an independent authenticity proof.
 

@@ -12,13 +12,18 @@ See [inspection, scanner setup, verdicts and limitations](docs/INSPECTION.md).
 Missing scanners and incomplete coverage are reported explicitly as UNKNOWN
 unless a strong correlated execution concern already warrants HIGH RISK.
 
-**v0.1.0-alpha (`0.1.0a1`) is experimental. No independent security audit has been
+**v0.1.0-alpha.2 (`0.1.0a2`) is experimental. No independent security audit has been
 completed. Do not use it as a production security boundary.** Every file in the
 writable workspace can be **read, changed or deleted**, including secrets. Use a
 disposable copy without other host writers.
 
 ## What it does
 
+- `inspect`, `map`, `findings`: bounded static repository inspection, potential
+  execution paths and normalized evidence, with text and `inspection-1` JSON output.
+  UNKNOWN means incomplete analysis. Inspection exit 0 means report generated,
+  never permission to execute. External scanners are not in the execution sandbox;
+  YARA-X/Scorecard remain gated. Synthetic benchmark results are not general reliability.
 - `explain`: deterministic findings and unknowns without executing the submitted
   command. A low risk score is not a safety guarantee.
 - `policy`: strict offline presets; approval never overrides a hard denial.
@@ -99,32 +104,31 @@ use Ubuntu in WSL2 or a Linux guest for this walkthrough.
 download_dir="$HOME/safeshell-alpha-download"
 mkdir -p "$download_dir"
 cd "$download_dir"
-base=https://github.com/HamzaGhebriche/SafeShell/releases/download/v0.1.0-alpha
-for asset in safeshell_cli-0.1.0a1-py3-none-any.whl safeshell_cli-0.1.0a1.tar.gz SHA256SUMS; do
+base=https://github.com/HamzaGhebriche/SafeShell/releases/download/v0.1.0-alpha.2
+for asset in safeshell_cli-0.1.0a2-py3-none-any.whl safeshell_cli-0.1.0a2.tar.gz SHA256SUMS; do
   curl --fail --location --output "$asset" "$base/$asset" || exit 1
 done
 sha256sum --check SHA256SUMS || exit 1
-tar -xzf safeshell_cli-0.1.0a1.tar.gz
-src="$download_dir/safeshell_cli-0.1.0a1"
+tar -xzf safeshell_cli-0.1.0a2.tar.gz
+src="$download_dir/safeshell_cli-0.1.0a2"
 ```
 
 Expected: **both distribution files say `OK`**. Stop on a failed download or
-checksum. The [existing prerelease](https://github.com/HamzaGhebriche/SafeShell/releases/tag/v0.1.0-alpha)
+checksum. The [prerelease](https://github.com/HamzaGhebriche/SafeShell/releases/tag/v0.1.0-alpha.2)
 also lists asset hashes. Checksums identify bytes; they are not a signature or audit.
 The verified source archive supplies the optional dummy fixture and scoped VM profile.
-Keep following this repository's current guide: the unchanged source archive
-retains the original release documentation.
+The built source archive contains the matching alpha.2 documentation and fixtures.
 
 ### 4. Install into a Python virtual environment
 
 ```sh
 python3 -m venv "$HOME/safeshell-alpha-venv"
 . "$HOME/safeshell-alpha-venv/bin/activate"
-python -m pip install --no-index --no-deps "$download_dir/safeshell_cli-0.1.0a1-py3-none-any.whl"
+python -m pip install --no-index --no-deps "$download_dir/safeshell_cli-0.1.0a2-py3-none-any.whl"
 safeshell --version
 ```
 
-Expected version: **`0.1.0a1`**. The CLI is now available in this activated terminal.
+Expected version: **`0.1.0a2`**. The CLI is now available in this activated terminal.
 The wheel has no runtime Python package dependencies.
 
 ### 5. Check sandbox startup without flooding the terminal
@@ -245,7 +249,7 @@ Return to the **same regular user**, then reactivate the installed venv:
 ```sh
 . "$HOME/safeshell-alpha-venv/bin/activate"
 download_dir="$HOME/safeshell-alpha-download"
-src="$download_dir/safeshell_cli-0.1.0a1"
+src="$download_dir/safeshell_cli-0.1.0a2"
 ```
 
 Shell variables do not survive a new terminal. Recreate **`$lab`, `$work` and

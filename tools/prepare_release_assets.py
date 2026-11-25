@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.1.0a1"
+VERSION = "0.1.0a2"
 
 
 def main():

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "safeshell-cli"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "Local-first command inspection and fail-closed Linux execution"
 readme = "README.md"
 requires-python = ">=3.11"

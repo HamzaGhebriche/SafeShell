@@ -1,50 +1,123 @@
-# v0.1.0-alpha — experimental prerelease
+# v0.1.0-alpha.2 — repository trust inspection (experimental prerelease)
 
-Python distribution version: **0.1.0a1**. Intended Git tag: **v0.1.0-alpha**.
-This is an experimental CLI alpha, **not production-ready** and not independently
-security-audited. GitHub prerelease assets are the wheel, built source archive and
-SHA256SUMS; no package registry publication is performed.
+Python distribution version: **0.1.0a2**. Git tag: **v0.1.0-alpha.2**.
+This alpha is not production-ready and has no independent security audit.
+Distribution is through a GitHub prerelease only; **nothing is published to PyPI**.
+The original v0.1.0-alpha tag, release and assets are unchanged.
 
-SafeShell inspects commands without executing the submitted command, applies
-strict offline policies, runs permitted commands inside a fail-closed Linux
-Bubblewrap/seccomp configuration, and stores local decision/exit metadata.
-Risk predictions do not change kernel restrictions. Approval cannot override
-hard denials or missing enforcement. No GUI, AI features or extra backend exists.
+## New repository inspection workflow
 
-## Try this release
+```console
+safeshell inspect ./unfamiliar-repository
+safeshell inspect ./unfamiliar-repository --show-map --verbose
+safeshell inspect ./unfamiliar-repository --format json
+safeshell map ./unfamiliar-repository
+safeshell findings ./unfamiliar-repository
+```
 
-Follow [the complete fresh Ubuntu VirtualBox guide](docs/VIRTUALBOX.md), then
-[the five-minute friend walkthrough](docs/FRIEND_TESTING.md). Install the verified
-wheel in a fresh venv; version must be 0.1.0a1 and doctor must succeed before
-protected execution. Ubuntu 24.04 needs the documented scoped AppArmor test-host
-policy on the validated configuration; global restrictions stay enabled.
-Native Windows/macOS provide inspection/policy/history and refuse execution.
+Inspection parses a bounded local snapshot without importing target modules,
+installing dependencies, running hooks or executing application code. Native
+analysis identifies supported manifests and literal process launches, builds a
+potential execution graph, correlates security signals and emits evidence-linked
+LOW RISK, CAUTION, HIGH RISK or UNKNOWN verdicts. The versioned JSON contract is
+`inspection-1`; original command-report schema_version 1 is preserved.
 
-## Important limitations
+Trivy and OSV-Scanner adapters normalize offline vulnerability, secret and
+configuration evidence. Package/version/alias correlation suppresses duplicate
+advisories while preserving attribution and secondary evidence. External binaries
+and vulnerability databases must be prepared independently; SafeShell never
+installs them or uploads source code as part of core inspection.
 
-- **Workspace files can be read, changed or deleted**, including mounted secrets.
-  Use private disposable copies without concurrent host writers. Generated outputs
-  can be malicious. Checking/scanning/binding is not atomic.
-- Runtime code and some kernel/proc metadata remain readable. There is no whole
-  host root bind, but this is not a VM secrecy boundary or immutable runtime image.
-- Wall-time and combined-output caps exist (defaults 300s / 1 MiB). **No CPU,
-  memory, process-count or disk quotas** are enforced. Resource exhaustion remains possible.
-- Fixed shell/core/Python runtime only; no Git, curl, npm/Node or arbitrary SDKs.
-  Interactive input, network-enabled policies and unsupported shell grammar are refused.
-- Host kernel/runtime trust, same-UID host races and unsigned local history remain.
-  Linux arm64/other filesystems/alternate ABIs and Windows history ACLs are unverified.
-- There is **no independent security audit** or claim that all vulnerabilities are found.
+## Corrections included
 
-## Validation and public review
+- Incomplete coverage remains explicit for unavailable, disabled, timed-out or
+  malformed scanner output; `--disable-scanner` is supported.
+- Comments, echo arguments and unrelated manual scripts no longer create or
+  strengthen automatic invocation chains. Literal npm-run chains are followed.
+- Unresolved working directories produce coverage gaps rather than guessed
+  sibling script edges. File/line evidence and native finding counts are retained.
+- Trivy `pip` and OSV `PyPI` advisories deduplicate with transitive aliases;
+  secondary evidence and per-engine counts are preserved.
+- Malformed fields and unsupported execution-file encodings are handled
+  conservatively; PowerShell UTF-16/BOM and `.PS1` are supported.
+- Distribution validation includes nested packages and retains strict rejection
+  of unexpected wheel payloads and private or incomplete source archives.
+- The release verifier installs both wheel and built sdist in separate clean
+  venvs. Source-build dependencies are supplied explicitly from an offline
+  wheelhouse; the package still has no runtime Python dependencies.
 
-[VALIDATION.md](docs/VALIDATION.md) records actual native Ubuntu and portable CI,
-separate from earlier local WSL/Debian checkpoints. The final prerelease body
-records the tagged SHA, successful final CI URL and exact uploaded asset hashes.
-The [public-readiness review](docs/PUBLIC_REVIEW.md) covers reachable history,
-temporary-helper exclusion and remaining verification limits.
+Existing explain, policy, run, doctor and history behavior and Linux sandbox
+restrictions are preserved. Inspection never authorizes or launches execution.
 
-Release preparation also tightens portable unexpected-skip rejection, checks
-distribution/source equality and required guide contents, tests the installed
-dummy boundary/cleanup walkthrough, and includes issue/security reporting guidance.
-Prior CI fixes retained NNP, minimal mounts, network separation, seccomp and
-fail-closed behavior. No security check was removed to obtain a green run.
+## Install the exact assets
+
+Required: Python 3.11+. These are the three release assets:
+
+- `safeshell_cli-0.1.0a2-py3-none-any.whl`
+- `safeshell_cli-0.1.0a2.tar.gz` (built sdist, not GitHub's automatic source archive)
+- `SHA256SUMS`
+
+Ubuntu/WSL2 or another POSIX shell, in a new directory:
+
+```sh
+mkdir safeshell-alpha2
+cd safeshell-alpha2
+base=https://github.com/HamzaGhebriche/SafeShell/releases/download/v0.1.0-alpha.2
+for asset in safeshell_cli-0.1.0a2-py3-none-any.whl safeshell_cli-0.1.0a2.tar.gz SHA256SUMS; do
+  curl --fail --location --output "$asset" "$base/$asset" || exit 1
+done
+sha256sum --check SHA256SUMS || exit 1
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install --no-index --no-deps ./safeshell_cli-0.1.0a2-py3-none-any.whl
+safeshell --version
+safeshell inspect . --format json
+```
+
+Expected version: **0.1.0a2**. On Windows, create the venv with `python -m venv .venv`
+and activate `.venv\Scripts\Activate.ps1`; the wheel supports inspection,
+policy and history, while protected execution still requires Linux.
+
+For protected Linux execution, use a normal user with Bubblewrap/libseccomp and
+working namespaces. Follow the matching [README](README.md) and
+[Ubuntu VM guide](docs/VIRTUALBOX.md); WSL is a different environment. `doctor`
+is a setup probe, not proof of containment. Never weaken controls to force it
+to pass, and never use `sudo safeshell`.
+
+## Limits that remain visible
+
+- **Static analysis is partial.** Dynamic imports, computed commands/cwd, generated
+  code, JSONC and full YAML/control-flow interpretation are outside this alpha.
+  False positives and false negatives remain possible. **LOW RISK is no guarantee.**
+- **UNKNOWN means analysis is incomplete.** Missing scanners/databases or parser
+  gaps remain visible; a strong correlated chain may still warrant HIGH RISK.
+- **Inspection CLI exit 0 means a report was generated**, including UNKNOWN/HIGH
+  RISK. It does not permit execution. Invalid input/inspection errors use exit 2;
+  scanner exit codes are reported separately.
+- **External scanners are not inside SafeShell's execution sandbox.** Their
+  authority is the host user's; offline flags and tested caches/proxies do not
+  enforce an OS network boundary. Scanner process descendants/resource quotas and
+  concurrent hostile-writer races remain limits.
+- **YARA-X and Scorecard remain feature-gated and unavailable**, not working
+  integrations. This can keep ordinary default scans at UNKNOWN.
+- The seven-sample benchmark uses synthetic recorded scanner evidence. It is a
+  regression harness, **not evidence of general reliability or scanner superiority**.
+- **Every file in an execution workspace can be read, changed or deleted**, including
+  credentials. Use disposable secret-free copies without concurrent host writers.
+  No CPU, memory, process-count or disk quota is enforced. Fixed runtime tools
+  exclude arbitrary SDKs/npm/Git/curl; native Windows/macOS execution is refused.
+
+Vulnerable does not mean malicious. Suspicious does not mean malicious. Low
+repository posture does not mean malicious. See [inspection limits](docs/INSPECTION.md)
+and [sandbox guarantees and limits](docs/SANDBOX.md).
+
+## Validation and provenance
+
+The GitHub prerelease body records the exact tagged commit, successful release
+CI, hashes of the CI-built assets and checks after downloading the published
+files. Checksums identify bytes; they are not signatures or a security audit.
+No old release is replaced and no package-registry upload is performed.
+
+Earlier [review results](docs/INSPECTION_REVIEW.md), including real Trivy 0.76.2
+and OSV-Scanner 2.7.1 checks on controlled inputs, are historical evidence. They
+are not presented as new tests of scanner versions or a broad real-project benchmark.

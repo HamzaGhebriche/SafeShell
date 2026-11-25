@@ -1,6 +1,6 @@
 # Security policy
 
-SafeShell v0.1.0-alpha (package 0.1.0a1) is an experimental review candidate. No supported production release or independent audit
+SafeShell v0.1.0-alpha.2 (package 0.1.0a2) is an experimental review candidate. No supported production release or independent audit
 is claimed. Keep the host kernel, bubblewrap, libseccomp and Python security-patched.
 
 Report suspected bypasses through

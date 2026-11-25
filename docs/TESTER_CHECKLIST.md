@@ -3,7 +3,7 @@
 Use dummy files in a private disposable project. No real credentials or destructive host tests.
 
 * [ ] **Installation clarity:** install the candidate wheel into a fresh venv without the source
-  checkout on PYTHONPATH. Version is 0.1.0a1. Linux prerequisites, fixed runtime tools and
+  checkout on PYTHONPATH. Version is 0.1.0a2. Linux prerequisites, fixed runtime tools and
   unsupported-platform restrictions are clear. `doctor` gives either setup details or a remedy.
 * [ ] **Understandable explanations:** the walkthrough's download/shell command gets specific
   findings and unknowns without execution. “No known risk signals” is not a safety promise.
@@ -36,5 +36,6 @@ Use [SECURITY.md](../SECURITY.md) for suspected boundary bypasses; use a normal 
 usability/packaging issues. An unavailable backend or unsupported runtime is not evidence of a
 sandbox bypass. Actual native Ubuntu CI and portable results, commit/run links and evidence are recorded in
 [VALIDATION.md](VALIDATION.md). Include the tested commit SHA as well as version in bug reports;
-all candidates still use 0.1.0a1. Ubuntu hosts may need reviewed AppArmor configuration;
+this candidate uses 0.1.0a2, while the earlier alpha used 0.1.0a1.
+Ubuntu hosts may need reviewed AppArmor configuration;
 see [CI_HANDOFF.md](CI_HANDOFF.md).

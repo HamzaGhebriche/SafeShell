@@ -1,4 +1,4 @@
-"""Offline wheel install into a fresh venv; exercise only the installed CLI from a new cwd."""
+"""Offline distribution install into a fresh venv; exercise only the installed CLI."""
 
 import argparse
 import hashlib
@@ -15,10 +15,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("wheel", type=Path)
     parser.add_argument("--require-backend", action="store_true")
+    parser.add_argument(
+        "--build-wheelhouse",
+        type=Path,
+        help="Trusted offline setuptools/wheel directory; required for a source archive",
+    )
     args = parser.parse_args()
     wheel = args.wheel.resolve(strict=True)
+    source_archive = wheel.name.endswith(".tar.gz")
+    if not source_archive and wheel.suffix != ".whl":
+        parser.error("Provide a wheel or built .tar.gz source distribution")
+    if source_archive and not args.build_wheelhouse:
+        parser.error("Source installation requires --build-wheelhouse")
+    build_wheelhouse = args.build_wheelhouse.resolve(strict=True) if args.build_wheelhouse else None
     report = {
-        "wheel": wheel.name,
+        "wheel": None if source_archive else wheel.name,
+        "distribution": wheel.name,
+        "package_format": "sdist" if source_archive else "wheel",
         "sha256": hashlib.sha256(wheel.read_bytes()).hexdigest(),
         "workflows": {},
     }
@@ -42,8 +55,37 @@ def main():
         binary = install / ("Scripts" if os.name == "nt" else "bin")
         python = binary / ("python.exe" if os.name == "nt" else "python")
         cli = binary / ("safeshell.exe" if os.name == "nt" else "safeshell")
+        if source_archive:
+            subprocess.run(
+                [
+                    str(python),
+                    "-m",
+                    "pip",
+                    "install",
+                    "--no-index",
+                    "--find-links",
+                    str(build_wheelhouse),
+                    "setuptools>=77",
+                    "wheel",
+                ],
+                check=True,
+                cwd=project,
+                env=environment,
+                capture_output=True,
+                timeout=120,
+            )
+        install_options = ["--no-build-isolation"] if source_archive else []
         subprocess.run(
-            [str(python), "-m", "pip", "install", "--no-index", "--no-deps", str(wheel)],
+            [
+                str(python),
+                "-m",
+                "pip",
+                "install",
+                "--no-index",
+                "--no-deps",
+                *install_options,
+                str(wheel),
+            ],
             check=True,
             cwd=project,
             env=environment,
@@ -62,7 +104,7 @@ def main():
         ).strip()
         package_info = json.loads(package_details)
         package = package_info["file"]
-        assert package_info["version"] == package_info["metadata"] == "0.1.0a1"
+        assert package_info["version"] == package_info["metadata"] == "0.1.0a2"
         assert Path(package).resolve(strict=True).is_relative_to(install), (
             "Source checkout shadowed the installed package"
         )
@@ -87,7 +129,7 @@ def main():
             return json.loads(result.stdout) if machine else result.stdout.strip()
 
         version = invoke("version", ["--version"], machine=False)
-        assert version == "0.1.0a1"
+        assert version == "0.1.0a2"
         report["version"] = version
         preview = invoke(
             "explain",
@@ -110,6 +152,10 @@ def main():
         assert inspection["verdict"]["verdict"] in {"LOW RISK", "CAUTION", "HIGH RISK", "UNKNOWN"}
         graph = invoke("map", ["map", str(project), "--json"])
         assert "execution_graph" in graph
+        assert "SafeShell execution map" in invoke("map-text", ["map", str(project)], machine=False)
+        assert "SafeShell Trust Check" in invoke(
+            "inspect-text", ["inspect", str(project)], machine=False
+        )
         assert not (project / "inspect-only-marker").exists()
         invoke("policy-init", ["policy", "init", "--preset", "offline", "--json"])
         assert (
@@ -239,7 +285,7 @@ def main():
             s["id"] for s in invoke("history-after-delete", ["history", "--json"])["sessions"]
         }
     report["clean_environment"] = (
-        "Fresh venv without system site packages; unrelated cwd; no network install; removed afterward"
+        "Fresh venv without system site packages; unrelated cwd; offline install; removed afterward"
     )
     print(json.dumps(report, indent=2))
 

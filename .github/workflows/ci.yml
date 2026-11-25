@@ -26,7 +26,11 @@ jobs:
       - run: python -m build --no-isolation
       - name: Synthetic trust-decision benchmark (recorded evidence only)
         run: python -m safeshell.inspection.benchmark
-      - run: python tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl
+      - run: python tools/smoke_installed.py dist/safeshell_cli-0.1.0a2-py3-none-any.whl
+      - name: Prepare source-install build dependencies
+        run: python -m pip download --only-binary=:all: --dest .build-tmp/build-wheels 'setuptools>=77' wheel
+      - name: Verify clean offline source installation
+        run: python tools/smoke_installed.py dist/safeshell_cli-0.1.0a2.tar.gz --build-wheelhouse .build-tmp/build-wheels
   linux-boundary:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -52,14 +56,18 @@ jobs:
           sudo aa-status
           sudo journalctl -k --no-pager -n 80
       - run: python -m build --no-isolation
-      - run: python tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl --require-backend > validation-results/installed-smoke.json
+      - run: python tools/smoke_installed.py dist/safeshell_cli-0.1.0a2-py3-none-any.whl --require-backend > validation-results/installed-smoke.json
+      - name: Prepare source-install build dependencies
+        run: python -m pip download --only-binary=:all: --dest .build-tmp/build-wheels 'setuptools>=77' wheel
+      - name: Verify clean offline source installation with backend
+        run: python tools/smoke_installed.py dist/safeshell_cli-0.1.0a2.tar.gz --build-wheelhouse .build-tmp/build-wheels --require-backend > validation-results/installed-sdist-smoke.json
       - run: python tools/prepare_release_assets.py dist
       - uses: actions/upload-artifact@v4
         with:
           name: alpha-distributions
           path: |
-            dist/safeshell_cli-0.1.0a1-py3-none-any.whl
-            dist/safeshell_cli-0.1.0a1.tar.gz
+            dist/safeshell_cli-0.1.0a2-py3-none-any.whl
+            dist/safeshell_cli-0.1.0a2.tar.gz
             dist/SHA256SUMS
           if-no-files-found: error
       - uses: actions/upload-artifact@v4

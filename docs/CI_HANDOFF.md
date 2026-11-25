@@ -44,7 +44,9 @@ SAFESHELL_REQUIRE_BACKEND=1 \
 SAFESHELL_EXPECT_APPARMOR_PROFILE='safeshell-bwrap//&safeshell-child' \
 python tools/validate_linux.py
 python -m build --no-isolation
-python tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl --require-backend
+python tools/smoke_installed.py dist/safeshell_cli-0.1.0a2-py3-none-any.whl --require-backend
+python -m pip download --only-binary=:all: --dest .build-tmp/build-wheels 'setuptools>=77' wheel
+python tools/smoke_installed.py dist/safeshell_cli-0.1.0a2.tar.gz --build-wheelhouse .build-tmp/build-wheels --require-backend
 python tools/prepare_release_assets.py dist
 ```
 
@@ -57,7 +59,8 @@ audit. An unavailable backend must refuse execution.
 The native job builds wheel/sdist from its exact checkout. The installed verifier
 uses a fresh venv, no system packages, no-index/no-deps installation and unrelated
 cwd. It verifies version/source-import exclusion, explain/script, policy init and
-validate, hard denial, run/refusal, limits, history, dummy outside/home/symlink and
+validate, inspect/map text and JSON, and offline built-sdist installation.
+The same verifier checks hard denial, run/refusal, limits, history, dummy outside/home/symlink and
 socket/environment checks, and delayed-descendant cleanup.
 
 `prepare_release_assets.py` compares wheel/package and sdist source bytes with the
