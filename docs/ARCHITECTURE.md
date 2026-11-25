@@ -12,7 +12,7 @@ and escapes untrusted display text. There are no cloud integrations or implicit 
 Flow: parse CLI → resolve workspace → load/validate policy → inspect → evaluate → probe backend
 → audit decision → require approval where applicable → verify workspace again → launch exact
 argv in bubblewrap → record exit. Inspection stops before audit/launch. Missing enforcement
-never routes to a host subprocess. The only host subprocesses are the trusted bubblewrap binary
+never routes to a host subprocess. The command path uses the trusted bubblewrap binary
 for a fixed capability probe and for sandbox setup.
 
 The public report uses schema_version 1. Predicted behavior/findings, configured policy,
@@ -22,3 +22,10 @@ the setup configuration when the fixed true command succeeds. Neither field cert
 boundary test run or a later launch. Evidence for containment belongs in the validation artifacts.
 Each launch uses the same restrictions and can still fail.
 Future agent launchers and a UI should call these modules and preserve that distinction.
+
+`inspection/` is an independent static workflow: bounded inventory → filtered
+snapshot → native surfaces/graph and offline scanner adapters → normalized
+findings → deduplication → relationship rules → verdict → presentation. It never
+calls backend.run or imports target code. External scanner subprocesses use a
+minimal environment, deadlines and bounded pipes. They are not sandboxed by the
+existing execution backend. See [inspection architecture and limits](INSPECTION.md).

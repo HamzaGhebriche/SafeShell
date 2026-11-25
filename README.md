@@ -4,6 +4,14 @@ Inspect an unfamiliar command before running it, apply an explicit offline polic
 and execute permitted commands inside a constrained Linux workspace. Review the
 decision and exit status afterward in local metadata history.
 
+Repository trust inspection is now available as an experimental workflow:
+`safeshell inspect ./repo`, `safeshell map ./repo`, and
+`safeshell inspect ./repo --format json`. SafeShell correlates potential execution
+paths with static security evidence before you choose whether to run code.
+See [inspection, scanner setup, verdicts and limitations](docs/INSPECTION.md).
+Missing scanners and incomplete coverage are reported explicitly as UNKNOWN
+unless a strong correlated execution concern already warrants HIGH RISK.
+
 **v0.1.0-alpha (`0.1.0a1`) is experimental. No independent security audit has been
 completed. Do not use it as a production security boundary.** Every file in the
 writable workspace can be **read, changed or deleted**, including secrets. Use a

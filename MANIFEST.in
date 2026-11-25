@@ -1,5 +1,6 @@
 include SECURITY.md CONTRIBUTING.md CHANGELOG.md RELEASE_NOTES.md
 include Vagrantfile
+recursive-include schemas *.json
 recursive-include tools *.py
 recursive-include tests *.py
 recursive-include docs *.md *.json

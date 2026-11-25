@@ -24,6 +24,8 @@ jobs:
       - run: python -m pytest -ra
         if: runner.os != 'Linux'
       - run: python -m build --no-isolation
+      - name: Synthetic trust-decision benchmark (recorded evidence only)
+        run: python -m safeshell.inspection.benchmark
       - run: python tools/smoke_installed.py dist/safeshell_cli-0.1.0a1-py3-none-any.whl
   linux-boundary:
     runs-on: ubuntu-24.04

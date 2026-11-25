@@ -17,6 +17,10 @@ validation-results/
 .venv/
 .venv*/
 .test-public*/
+.test-inspection*/
+.test-trust*/
+.coverage
+coverage.json
 release-assets/
 # Local credentials and deployment helpers must never enter source/history.
 .env

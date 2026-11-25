@@ -15,6 +15,25 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(prog="safeshell", description="Run anything. Trust nothing.")
     result.add_argument("--version", action="version", version=__version__)
     subs = result.add_subparsers(dest="action", required=True)
+    for action in ("inspect", "map", "findings"):
+        sub = subs.add_parser(
+            action, help="Static local repository inspection; never runs target code"
+        )
+        sub.add_argument("target", type=Path)
+        sub.add_argument("--json", action="store_true")
+        sub.add_argument("--format", choices=["text", "json"], default="text")
+        sub.add_argument("--verbose", action="store_true")
+        sub.add_argument("--show-map", action="store_true")
+        sub.add_argument(
+            "--cache-dir", type=Path, help="Trusted pre-populated offline scanner cache"
+        )
+        sub.add_argument(
+            "--disable-scanner",
+            action="append",
+            default=[],
+            choices=["trivy", "osv", "yara-x", "scorecard"],
+            help="Disable an engine explicitly; coverage remains incomplete",
+        )
     for action in ("explain", "run"):
         sub = subs.add_parser(action)
         sub.add_argument("--json", action="store_true")
@@ -105,6 +124,22 @@ def show_report(report: dict):
 
 def execute(args) -> int:
     machine = args.json
+    if args.action in {"inspect", "map", "findings"}:
+        from .inspection.engine import inspect_repository, render, render_map
+
+        report = inspect_repository(
+            args.target, cache=args.cache_dir, disabled=args.disable_scanner
+        )
+        machine = machine or args.format == "json"
+        if machine:
+            emit(report, True)
+        elif args.action == "map":
+            print(render_map(report))
+        else:
+            print(render(report, args.verbose or args.action == "findings"))
+            if args.show_map:
+                print(render_map(report))
+        return 0
     if args.action == "doctor":
         capability = backend.discover()
         details = backend.describe(capability)
@@ -277,7 +312,7 @@ def main() -> int:
     except KeyboardInterrupt:
         return 130
     except (ValueError, OSError, RuntimeError, TypeError) as exc:
-        if getattr(args, "json", False):
+        if getattr(args, "json", False) or getattr(args, "format", None) == "json":
             emit({"schema_version": 1, "error": str(exc), "exit_code": 2}, True)
         else:
             print("SafeShell error: " + audit.safe(str(exc)), file=sys.stderr)
